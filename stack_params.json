@@ -1,0 +1,8 @@
+[
+    {
+        "ParameterKey": "BucketName",
+        "ParameterValue": "black-panthering",
+        "UsePreviousValue": true,
+        "ResolvedValue": "string"
+    }
+]
