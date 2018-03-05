@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import json
 import boto3
 from botocore.exceptions import ClientError
 from colorama import init, Fore
@@ -16,53 +15,47 @@ def main():
     if already exists, prompt to update (teardown/rebuild) or delete.
     """
 
-    region = 'us-west-1' # overide any local aws-cli config
-    domain_name = 'DevOpsEtc.com'
-    iam_group_user = 'Blog-Users'
-    iam_group_user_desc = 'Blog Users'
-    iam_group_admin = 'Blog-Admins'
-    iam_group_admin_desc = 'Blog Admins'
-    iam_user = 'Blog-User'
-    iam_admin = 'Blog-Admin'
-    iam_policy_iam = 'Blog-Pol-IAM'
-    iam_policy_s3 = 'Blog-Pol-S3'
-    cf_stack = 'Blog-Stack'
-    cf_params = 'stack_params.json'
-    cf_template = 'blog_stack.yaml'
-    s3_bucket_cdn = domain_name + '-cdn' # bucket for website
-    s3_bucket_log = domain_name + '-log' # bucket for access log
+    region = 'us-east-1' # overide local AWS config; needed for certificate
+    profile = 'Static-Site'
+    cf_stack = profile + '-Stack'
+    cf_template = 's3.cfn.yaml'
+    domain = 'devopsetc.com'
+    # account = boto3.client('sts').get_caller_identity()['Account']
+    params =  [
+        {"ParameterKey": "DomainName","ParameterValue": domain},
+        {"ParameterKey": "GroupName","ParameterValue": profile}
+    ]
+    cf = boto3.client('cloudformation')
 
     init(autoreset=True) # colorama: automatically reset style after each call
 
-    cf = boto3.client('cloudformation')
+    # set which AWS credentials to use for this session
+    # boto3.setup_default_session(profile_name=profile)
 
     try:
         cf.describe_stacks(StackName=cf_stack)
     except ClientError as e:
         if e.response['Error']['Message'].endswith('does not exist'):
-            launch_stack(cf, cf_stack, cf_params, cf_template)
+            launch_stack(cf, cf_stack, cf_template, params)
     else:
-        print('\nStack Already Exists:',Fore.RED + cf_stack + '!')
-        prompt = Fore.YELLOW + '\nUpdate|Delete|Cancel (U|D|C): ' + Fore.RESET
+        print('\n' + Fore.RED + cf_stack + 'Already Exists!\n')
+        prompt = Fore.YELLOW + 'Update|Delete|Cancel (U|D|C): ' + Fore.RESET
         while "input invalid":
             reply = str(input(prompt)).lower().strip()
             if reply[:1] == 'u':
-                update_stack(cf, cf_stack, cf_params, cf_template)
+                update_stack(cf, cf_stack, cf_template, params)
                 return True
             if reply[:1] == 'd':
-                delete_stack(cf, cf_stack)
+                delete_stack(cf, cf_stack, domain)
                 return False
             if reply[:1] == 'c':
                 return False
 
-def launch_stack(cf, cf_stack, cf_params, cf_template):
+def launch_stack(cf, cf_stack, cf_template, params):
     print('')
     spin_start = '\nLaunching Stack...'
     spinner = Halo(text=spin_start, spinner='circleHalves')
     spinner.start()
-
-    with open(cf_params, 'r') as f:
-        params = json.load(f)
 
     with open(cf_template, 'r') as f:
         template = f.read()
@@ -71,7 +64,7 @@ def launch_stack(cf, cf_stack, cf_params, cf_template):
         StackName=cf_stack,
         TemplateBody=template,
         Parameters=params,
-        TimeoutInMinutes=5,
+        TimeoutInMinutes=10,
         Capabilities=['CAPABILITY_NAMED_IAM'],
         OnFailure='ROLLBACK'
     )
@@ -82,38 +75,46 @@ def launch_stack(cf, cf_stack, cf_params, cf_template):
     spin_success = '\nStack Created!'
     spinner.succeed(text=spin_success)
 
-def update_stack(cf, cf_stack, cf_params, cf_template):
-    print('')
-    spin_start = '\nUpdating Stack...'
-    spinner = Halo(text=spin_start, spinner='circleHalves')
-    spinner.start()
+def update_stack(cf, cf_stack, cf_template, params):
+    try:
+        print('')
+        spin_start = '\nUpdating Stack...'
+        spinner = Halo(text=spin_start, spinner='circleHalves')
+        spinner.start()
 
-    with open(cf_params, 'r') as f:
-        params = json.load(f)
+        with open(cf_template, 'r') as f:
+            template = f.read()
 
-    with open(cf_template, 'r') as f:
-        template = f.read()
+        cf.update_stack(
+            StackName=cf_stack,
+            TemplateBody=template,
+            Parameters=params,
+            Capabilities=['CAPABILITY_NAMED_IAM']
+        )
 
-    cf.update_stack(
-        StackName=cf_stack,
-        TemplateBody=template,
-        Parameters=params,
-        Capabilities=['CAPABILITY_NAMED_IAM']
-    )
+        waiter = cf.get_waiter('stack_update_complete')
+        waiter.wait(StackName=cf_stack)
 
-    waiter = cf.get_waiter('stack_update_complete')
-    waiter.wait(StackName=cf_stack)
+        spin_success = '\nStack Updated!'
+        spinner.succeed(text=spin_success)
+    except ClientError as e:
+        error_string = 'No updates are to be performed.'
+        if e.response['Error']['Message'].endswith(error_string):
+            print(Fore.RED + error_string)
+            quit()
 
-    spin_success = '\nStack Updated!'
-    spinner.succeed(text=spin_success)
-
-
-
-def delete_stack(cf, cf_stack):
+def delete_stack(cf, cf_stack, domain):
     print('')
     spin_start = '\nDeleting Stack...'
     spinner = Halo(text=spin_start, spinner='circleHalves')
     spinner.start()
+
+    # Bucket can't be deleted unless it's empty
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket(domain)
+    bucket_log = s3.Bucket(domain + '-log')
+    bucket.objects.all().delete()
+    bucket_log.objects.all().delete()
 
     cf.delete_stack(StackName=cf_stack)
 
