@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Static Website: combining S3, CloudFront and Route53.'
+Description: 'Deploy IAM group/policy/user, S3 buckets, CloudFront and Route53.'
 
 Parameters:
   DomainName:
@@ -10,10 +10,6 @@ Parameters:
     Type: String
 
 Resources:
-  # Certificate:
-  #   Type: 'AWS::CertificateManager::Certificate'
-  #   Properties:
-  #     DomainName: !Ref DomainName
   IAMUserGroup:
     Type: AWS::IAM::Group
     Properties:
@@ -50,6 +46,7 @@ Resources:
       BucketName: !Ref DomainName
       WebsiteConfiguration:
         IndexDocument: 'index.html'
+        ErrorDocument: error.html
 
   S3BucketLog:
     Type: 'AWS::S3::Bucket'
