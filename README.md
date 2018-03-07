@@ -2,7 +2,7 @@
 
 ### Automatic deployment of a secure, AWS S3-backed and CloudFront CDN-distributed, static website using Python, Boto3 and CloudFormation.
 
-Do you like setting up and maintaining the server that runs your blog? Do you like how slow your pages loads from the CMS's database? How about how much money you're spending on hosting?! Yuck, I don't at all, that's why I switched from a CMS to a statically generated website and migrated to an AWS S3 bucket served up by a CDN distribution using AWS CloudFront. This project, built with the AWS SDK for Python (Boto3) and CloudFormation, allows you to quickly deploy the requisite AWS infrastructure needed to streamline your blog setup and serve it up fast and inexpensively.
+Do you like setting up and maintaining the server that runs your blog? Do you like how slow your pages load from the CMS's database? How about how much money you're spending on hosting?! Yuck, I don't at all, that's why I switched from a CMS to a statically generated website and migrated to an AWS S3 bucket served up by a CDN distribution using AWS CloudFront. This project, built with the AWS SDK for Python (Boto3) and CloudFormation, allows you to quickly deploy the requisite AWS infrastructure needed to streamline your blog setup and serve it up fast and inexpensively.
 
 Code walkthrough and additional information can be found at:  [DevOpsEtc.com/post/s3-cf-static-site](https://DevOpsEtc.com/post/s3-cf-static-site)
 
@@ -15,7 +15,7 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
 **Prerequisites:**
   * MacOS High Sierra (will probably work on earlier MacOS versions and Linux, but YMMV)
   * Python 3: $ brew install python3
-  * Python Modules: $ pip3 install boto3 awscli colorama (sudo may needed to run with elevated privileges)
+  * Python Modules: $ pip3 install boto3 awscli colorama (sudo may be needed to run with elevated privileges)
   * Amazon Web Services account (if new to AWS, there's a year long free-tier plan available)
   * AWS credentials: $ aws configure (paste in access keys from AWS management console)
   * Custom domain name
