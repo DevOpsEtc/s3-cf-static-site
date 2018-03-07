@@ -1,10 +1,10 @@
 <h1> <img src="image/logo.png"> DevOps /etc</h1>
 
-### Automatic deployment of a secure, AWS S3-backed and CloudFront CDN-distributed, static website using Python, Boto3 and a CloudFormation stack.
+### Automatic deployment of a secure, AWS S3-backed and CloudFront CDN-distributed, static website using Python, Boto3 and CloudFormation.
 
-Do you like setting up and maintaining that server that runs your blog? Do you like how slow your pages loads from the CMS's database? How about how much money you're spending on hosting?! Yuck, I don't at all, that's why I switched from a CMS to a statically generated site and migrated to an AWS S3 bucket served up by a CDN distribution using AWS CloudFront. This project, built with the AWS SDK for Python (Boto3) and CloudFormation, allows you to quickly deploy the requisite AWS infrastructure needed to streamline your blog setup and serve it up fast and inexpensively.
+Do you like setting up and maintaining the server that runs your blog? Do you like how slow your pages loads from the CMS's database? How about how much money you're spending on hosting?! Yuck, I don't at all, that's why I switched from a CMS to a statically generated website and migrated to an AWS S3 bucket served up by a CDN distribution using AWS CloudFront. This project, built with the AWS SDK for Python (Boto3) and CloudFormation, allows you to quickly deploy the requisite AWS infrastructure needed to streamline your blog setup and serve it up fast and inexpensively.
 
-Code walkthrough and additional information can be found at:  [DevOpsEtc.com/post/ec2-keypair-rotation](https://DevOpsEtc.com/post/s3-cf-static-site)
+Code walkthrough and additional information can be found at:  [DevOpsEtc.com/post/s3-cf-static-site](https://DevOpsEtc.com/post/s3-cf-static-site)
 
 **Features/Benefits:**
   * CloudFormation for quicker provisioning of repeatable and updatable AWS resources
@@ -22,7 +22,7 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
   * AWS Route 53 hosted zone for custom domain name
   * Valid custom domain name email, catch-all, or forwarding address setup at registrar for certificate email validation
 
-**Script Output Screenshots:**
+**Script Output Screenshot:**
 
   <p align="center"> <img src="image/output1.png"></p>
 
@@ -34,8 +34,7 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
   * Two S3 buckets
   * One CloudFront distribution
   * Two Route 53 DNS records
-
-  All resources are provisioned in AWS region: us-east-1. The ACM certificate will not work with CloudFront if a different region is used. Running this script will launch an AWS CloudFormation stack that provisions, among other things, S3 buckets and CloudFront distributions, both of which incur minimal service fees... i.e. don't forget to delete the stack if no longer needed!
+  * AWS resources provisioned in region: us-east-1... needed for ACM certificate/CloudFront compatibility.
 
 **Getting Started:**
 
@@ -48,14 +47,17 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
     # Run script
     $ cd ~/DevOpsEtc/s3-cf-static-site && ./deploy.py
 
-    # Running the script again will prompt: Update | Delete | Cancel. Choose "Update" if you've made a change to the CloudFormation (CFN) template that you'd like to be pushed to your installed CFN stack. Choosing "Delete" will rollback all changes introduced by the initial stack launch and any subsequent stack updates, and delete the CloudFormation stack.
-
-    <p align="center"> <img src="image/output2.png"></p>
-
     # Manually copy a file from local to S3 bucket
     # Special case bypass of git commit
     # Remember this S3 bucket has public read access
     $ aws s3 cp ~/path/to/file s3://your-your_domain_name
+
+**Notes:**    
+Running this script will launch an AWS CloudFormation stack that provisions, among other things, S3 buckets and CloudFront distributions, both of which incur minimal service fees... i.e. don't forget to delete the stack if no longer needed!
+
+Rerun the script to see prompt: Update | Delete | Cancel. Choose "Update" if you've made a change to the CloudFormation (CFN) template that you'd like to be pushed to your installed CFN stack. Choose "Delete" to rollback all changes introduced by the initial stack launch and any subsequent stack updates, and to delete the CloudFormation stack.
+
+<p align="center"> <img src="image/output2.png"></p>
 
 **Known Issues:**
 - None
