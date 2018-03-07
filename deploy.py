@@ -15,6 +15,7 @@ def main():
         - One IAM user
         - Two S3 buckets
         - One CloudFront distribution resource
+        - Two Route 53 DNS records
 
     Also, wrapper script checks for existing stack and if found, prompts to
     push CloudFormation template changes via an update or rollback deployment
