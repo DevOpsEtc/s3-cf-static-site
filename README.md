@@ -15,6 +15,7 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
 **Prerequisites:**
   * MacOS High Sierra (should work on other versions and Linux too, but YMMV)
   * Python 3: $ brew install python3
+  * GoAccess: $ brew install goaccess # optional visual web log analyzer
   * Python Modules: $ pip3 install awscli boto3 colorama (sudo may be needed for elevated privileges)
   * Amazon Web Services account (if new to AWS, there's a year long free-tier plan available)
   * AWS credentials: $ aws configure (paste in access keys from AWS management console)
@@ -59,6 +60,26 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
 
     # Invalidate objects from CloudFront edge caches
     $ dist_id=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Aliases.Items, 'your_distro_alias')].Id" --output text) && aws cloudfront create-invalidation --distribution-id $dist_id --paths "/*"
+
+    # Sync log files
+    $ aws s3 sync s3://your_bucket-log ~/path/to/synced/logs
+
+    # Visual log analysis in terminal
+    $ gunzip -c ~/path/to/synced/logs/*.gz | goaccess
+
+    # Visual log analysis in browser
+    $ gunzip -c ~/path/to/synced/logs/*.gz | goaccess -a -o ~/path/to/synced/logs/report.html
+    $ open ~/path/to/synced/logs/report.html
+
+    # Automatically sync/parse/analyze logs; update path & bucket
+    # Paste in terminal for single use or bashrc for reuse
+    web_logs() {
+      logs=$HOME/path/to/synced/logs
+      aws s3 sync s3://your_bucket-log $logs/..
+      [[ "$1" == "-t" ]] && gunzip -c $logs/*.gz | goaccess || gunzip -c $logs/*.gz | goaccess -a -o $logs/report.html; open $logs/report.html
+    }
+    $ web_logs # to view in browser
+    $ web_logs -t # to view in terminal
 
     # List all S3 buckets
     $ aws s3 ls
