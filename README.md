@@ -2,7 +2,7 @@
 
 ### Automatic deployment of a secure, AWS S3-backed and CloudFront CDN-distributed, static website using Python, Boto3 and CloudFormation.
 
-Do you like setting up and maintaining the server that runs your blog? Do you like how slow your pages load from the CMS's database? How about how much money you're spending on hosting?! Yuck, I don't at all, that's why I switched from a CMS to a statically generated website and migrated to an AWS S3 bucket served up by a CDN distribution using AWS CloudFront. This project, built with the AWS SDK for Python (Boto3) and CloudFormation, allows you to quickly deploy the requisite AWS infrastructure needed to streamline your blog setup and serve it up fast and inexpensively.
+Do you like setting up and maintaining the server that runs your blog? Do you like how slow your pages load from the CMS's database? How about how much money you're spending on hosting?! I didn't like any of these things, so I switched from a CMS to a statically generated website and migrated to an AWS S3 bucket served up by a CDN distribution using AWS CloudFront. This project, built with the AWS SDK for Python (Boto3) and CloudFormation, allows you to quickly deploy the requisite AWS infrastructure needed to host your blog inexpensively and to serve it up fast.
 
 Code walkthrough and additional information can be found at:  [DevOpsEtc.com/post/s3-cf-static-site](https://DevOpsEtc.com/post/s3-cf-static-site)
 
@@ -13,18 +13,20 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
   * ACM SSL/TLS certificate for secure page loading via HTTPS
 
 **Prerequisites:**
-  * MacOS High Sierra (will probably work on earlier MacOS versions and Linux, but YMMV)
+  * MacOS High Sierra (should work on other versions and Linux too, but YMMV)
   * Python 3: $ brew install python3
-  * Python Modules: $ pip3 install boto3 awscli colorama (sudo may be needed to run with elevated privileges)
+  * Python Modules: $ pip3 install awscli boto3 colorama (sudo may be needed for elevated privileges)
   * Amazon Web Services account (if new to AWS, there's a year long free-tier plan available)
   * AWS credentials: $ aws configure (paste in access keys from AWS management console)
   * Custom domain name
-  * AWS Route 53 hosted zone for custom domain name
-  * Valid custom domain name email, catch-all, or forwarding address setup at registrar for certificate email validation
+  * AWS Route 53 hosted zone for your domain name
+  * Valid email@your_domain_name that's a catch-all address (for certificate validation)
 
 **Script Output Screenshot:**
 
   <p align="center"> <img src="image/output1.png"></p>
+
+  <p align="center"> <img src="image/output2.png"></p>
 
 **What Gets Provisioned:**
   * One ACM SSL/TLS certificate
@@ -34,7 +36,7 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
   * Two S3 buckets
   * One CloudFront distribution
   * Two Route 53 DNS records
-  * AWS resources provisioned in region: us-east-1... needed for ACM certificate/CloudFront compatibility.
+  * Region us-east-1 (for ACM certificate/CloudFront compatibility)
 
 **Getting Started:**
 
@@ -47,17 +49,40 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
     # Run script
     $ cd ~/DevOpsEtc/s3-cf-static-site && ./deploy.py
 
-    # Manually copy a file from local to S3 bucket
-    # Special case bypass of git commit
-    # Remember this S3 bucket has public read access
-    $ aws s3 cp ~/path/to/file s3://your-your_domain_name
+    # Update CloudFormation stack with template changes
+    $ cd ~/DevOpsEtc/s3-cf-static-site && ./deploy.py
+    $ U # enter after prompt: Update|Delete|Cancel (U|D|C)
+
+    # Delete CloudFormation stack and rollback updates/initial launch resources
+    $ cd ~/DevOpsEtc/s3-cf-static-site && ./deploy.py
+    $ D # enter after prompt: Update|Delete|Cancel (U|D|C)
+
+    # Invalidate objects from CloudFront edge caches
+    $ dist_id=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Aliases.Items, 'your_distro_alias')].Id" --output text) && aws cloudfront create-invalidation --distribution-id $dist_id --paths "/*"
+
+    # List all S3 buckets
+    $ aws s3 ls
+
+    # List all objects in an S3 bucket
+    $ aws s3 ls s3://your_bucket --recursive --human-readable --summarize
+
+    # Remove an object from S3 bucket
+    $ aws s3 rm s3://your_bucket/your_object
+
+    # Remove all objects from S3 bucket
+    $ aws s3 rm s3://your_bucket --recursive
+
+    # Remove all objects except type from S3 bucket
+    $ aws s3 rm s3://your_bucket --recursive --exclude "your_object_type"
+
+    # Copy a file to S3 bucket or an object within bucket
+    $ aws s3 cp ~/path/to/file s3://your_bucket
+
+    # Move and/or rename an object from one path to another
+    $ aws s3 mv s3://your_bucket/your_object s3://your_bucket/new_path/your_object
 
 **Notes:**    
-Running this script will launch an AWS CloudFormation stack that provisions, among other things, S3 buckets and CloudFront distributions, both of which incur minimal service fees... i.e. don't forget to delete the stack if no longer needed!
-
-Rerun the script to see prompt: Update | Delete | Cancel. Choose "Update" if you've made a change to the CloudFormation (CFN) template that you'd like to be pushed to your installed CFN stack. Choose "Delete" to rollback all changes introduced by the initial stack launch and any subsequent stack updates, and to delete the CloudFormation stack.
-
-<p align="center"> <img src="image/output2.png"></p>
+Running this script will launch an AWS CloudFormation stack that provisions, among other things, S3 buckets and CloudFront distributions, both of which incur minimal service fees... i.e. don't forget to delete the stack when it's no longer needed!
 
 **Known Issues:**
 - None

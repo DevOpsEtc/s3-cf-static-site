@@ -14,10 +14,13 @@ def main():
         - One IAM group policy
         - One IAM user
         - Two S3 buckets
-        - One CloudFront distribution resource
+        - One CloudFront distribution
         - Two Route 53 DNS records
 
-    Also, wrapper script checks for existing stack and if found, prompts to
+    Resources will be created in region us-east-1, for ACM
+    certificate/CloudFront compatibility.
+
+    Script checks for existing stack and if found, prompts to
     push CloudFormation template changes via an update or rollback deployment
     via a delete.
     """
