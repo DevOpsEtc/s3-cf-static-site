@@ -27,7 +27,7 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
 
   <p align="center"> <img src="image/output1.png"></p>
 
-  <p align="center"> <img src="image/output2.png"></p>
+  <p align="center"> <img src="image/stack_exists.png"></p>
 
 **What Gets Provisioned:**
   * One ACM SSL/TLS certificate
@@ -35,14 +35,16 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
   * One IAM group policy
   * One IAM user
   * Two S3 buckets
-  * One CloudFront distribution
-  * Two Route 53 DNS records
-  * Region us-east-1 (for ACM certificate/CloudFront compatibility)
+  - Two CloudFront distributions
+  - Two Route 53 DNS records
+  - One CodeCommit repository
+  - One local git repository
+  * Region: us-east-1 (for ACM certificate/CloudFront compatibility)
 
 **Getting Started:**
 
     # Clone the repo on GitHub
-    $ git clone https://github.com/DevOpsEtc/s3-cf-static-site ~/DevOpsEtc/s3-cf-static-site
+    $ git clone https://github.com/DevOpsEtc/s3-cf-static-site ~/DevOpsEtc/s3-cf-static-site/deploy
 
     # Update domain name in ~/DevOpsEtc/s3-cf-static-site/deploy.py
     domain = 'devopsetc.com' # your bare domain name
@@ -52,11 +54,11 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
 
     # Update CloudFormation stack with template changes
     $ cd ~/DevOpsEtc/s3-cf-static-site && ./deploy.py
-    $ U # enter after prompt: Update|Delete|Cancel (U|D|C)
+    $ U # enter after prompt: Update|Delete|Exit (U|D|X)
 
     # Delete CloudFormation stack and rollback updates/initial launch resources
     $ cd ~/DevOpsEtc/s3-cf-static-site && ./deploy.py
-    $ D # enter after prompt: Update|Delete|Cancel (U|D|C)
+    $ D # enter after prompt: Update|Delete|Exit (U|D|X)
 
     # Invalidate objects from CloudFront edge caches
     $ dist_id=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Aliases.Items, 'your_distro_alias')].Id" --output text) && aws cloudfront create-invalidation --distribution-id $dist_id --paths "/*"

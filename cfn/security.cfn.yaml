@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description:  >
+  Deploys a IAM group/policy/user and ACM certificate. Certificate needs to be
+  requested in us-east-1 region in order to work CloudFront distributions.
+
+Parameters:
+  DomainName:
+    Description: 'name of domain pointing to static website, e.g domain.com'
+    Type: String
+  GroupName:
+    Description: 'username with admin level access to S3 buckets'
+    Type: String
+  Region:
+    Description: 'default region name'
+    Type: String
+
+Resources:
+  ACMCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref DomainName
+      SubjectAlternativeNames:
+        - !Sub 'www.${DomainName}'
+
+  IAMUserGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Ref GroupName
+
+  IAMUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: !Sub '${GroupName}-Admin'
+      Groups:
+        - !Ref IAMUserGroup
+
+  IAMUserGroupPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Ref GroupName
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: FullAdminS3BucketStaticSite
+            Effect: "Allow"
+            Action: "*"
+            Resource:
+              - !Sub 'arn:aws:s3:::${DomainName}/*'
+              - !Sub 'arn:aws:s3:::${DomainName}'
+              - !Sub 'arn:aws:s3:::${DomainName}-log/*'
+              - !Sub 'arn:aws:s3:::${DomainName}-log'
+          - Sid: FullAdminAccessCodeCommit
+            Effect: "Allow"
+            Action: "*"
+            Resource:
+              - !Sub 'arn:aws:codecommit:::${DomainName}*'
+      Groups:
+        - Ref: IAMUserGroup

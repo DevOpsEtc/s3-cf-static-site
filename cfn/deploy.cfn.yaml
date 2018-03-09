@@ -1,8 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description:  >
-  Deploys ACM certificatate, IAM group/policy/user, S3 buckets and CloudFront
-  distribution. Certificate needs to be requested in us-east-1 region in order
-  to work CloudFront distribution.
+  Deploys S3 buckets and CloudFront distribution.
 
 Parameters:
   DomainName:
@@ -16,13 +14,6 @@ Parameters:
     Type: String
 
 Resources:
-  ACMCertificate:
-    Type: AWS::CertificateManager::Certificate
-    Properties:
-      DomainName: !Ref DomainName
-      SubjectAlternativeNames:
-        - !Sub 'www.${DomainName}'
-
   S3Bucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -50,36 +41,6 @@ Resources:
             Resource:
               - !Sub 'arn:aws:s3:::${S3Bucket}/*'
             Principal: '*'
-
-  IAMUserGroup:
-    Type: AWS::IAM::Group
-    Properties:
-      GroupName: !Ref GroupName
-
-  IAMUser:
-    Type: AWS::IAM::User
-    Properties:
-      UserName: !Sub '${GroupName}-Admin'
-      Groups:
-        - !Ref IAMUserGroup
-
-  IAMUserGroupPolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Ref GroupName
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: FullAdminS3BucketStaticSite
-            Effect: "Allow"
-            Action: "*"
-            Resource:
-              - !Sub 'arn:aws:s3:::${S3Bucket}/*'
-              - !Sub 'arn:aws:s3:::${S3Bucket}'
-              - !Sub 'arn:aws:s3:::${S3BucketLog}/*'
-              - !Sub 'arn:aws:s3:::${S3BucketLog}'
-      Groups:
-        - Ref: IAMUserGroup
 
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
