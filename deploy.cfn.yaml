@@ -19,11 +19,8 @@ Resources:
     Type: AWS::CertificateManager::Certificate
     Properties:
       DomainName: !Ref DomainName
-      DomainValidationOptions:
-      - DomainName: !Ref DomainName
-        ValidationDomain: !Ref DomainName
-      - DomainName: !Sub 'www.${DomainName}'
-        ValidationDomain: !Ref DomainName
+      SubjectAlternativeNames:
+        - !Sub 'www.${DomainName}'
 
   SiteBucket:
     Type: AWS::S3::Bucket

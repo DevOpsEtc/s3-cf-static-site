@@ -22,7 +22,7 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
   * Custom domain name
   * AWS Route 53 hosted zone for your domain name
   * Valid email@your_domain_name that's a catch-all address or valid address on WHOIS listing (for certificate validation)
-  * Cup of coffee while you wait for stack to provision resources
+  * Cup of coffee while you wait for stack to provision resources (CloudFront takes some time)
 
 **Script Output Screenshot:**
 

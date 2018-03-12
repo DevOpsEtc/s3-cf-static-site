@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import subprocess
 import boto3
 from botocore.exceptions import ClientError
 from colorama import init, Fore
@@ -53,7 +52,7 @@ def main():
         cf.describe_stacks(StackName=site)
     except ClientError as e:
         if e.response['Error']['Message'].endswith('does not exist'):
-            launch_stack(cf, deploy_tpl, params, s3, site)
+            launch_stack(cf, deploy_tpl, domain, params, s3, site)
     else:
         print (Fore.YELLOW + '\nStack Exists:' + site + '\n')
         prompt = Fore.GREEN + '[U]pdate, [D]elete or [C]ancel (U,D,C): '
@@ -70,7 +69,7 @@ def main():
             else:
                 print('\nInvalid, Try again\n')
 
-def launch_stack(cf, deploy_tpl, params, s3, site):
+def launch_stack(cf, deploy_tpl, domain, params, s3, site):
     print(Fore.GREEN + '\n'
         'Multiple certificate validation emails will be sent to:\n\n'
         '  - WHOIS listed domain contacts\n'
