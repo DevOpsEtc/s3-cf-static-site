@@ -26,177 +26,126 @@ def main():
     via a delete.
     """
 
-    region_nm = 'us-east-1' # overide any local AWS config; needed for ACM cert
-    profile_nm = 'Static-Site'
-    sec_stk = profile_nm + '-Access'
-    dep_stk = profile_nm + '-Deploy'
-    pip_stk = profile_nm + '-Pipeline'
-    stacks = [sec_stk, dep_stk, pip_stk]
-    sec_tpl = 'cfn/security.cfn.yaml'
-    dep_tpl = 'cfn/deploy.cfn.yaml'
-    pip_tpl = 'cfn/pipeline.cfn.yaml'
-    domain_nm = 'devopsetc.com'
+    region = 'us-east-1' # overide any local AWS config; needed for ACM cert
+    site = 'Static-Site'
+    deploy_tpl = 'deploy.cfn.yaml'
+    domain = 'devopsetc.com'
     params =  [
-        {"ParameterKey": "DomainName","ParameterValue": domain_nm},
-        {"ParameterKey": "GroupName","ParameterValue": profile_nm},
-        {"ParameterKey": "Region","ParameterValue": region_nm},
+        {"ParameterKey": "DomainName","ParameterValue": domain},
+        {"ParameterKey": "SiteName","ParameterValue": site},
     ]
-    account = boto3.client('sts').get_caller_identity()['Account']
-    cf = boto3.client('cloudformation', region_name=region_nm)
+    cf = boto3.client('cloudformation', region_name=region)
 
-    init(autoreset=True) # colorama: automatically reset style after each call
+    # AWS_account = boto3.client('sts').get_caller_identity()['Account']
 
     # set which AWS credentials to use for this session
-    # boto3.setup_default_session(profile_name=profile_nm)
+    # boto3.setup_default_session(profile_name=site)
 
-    print(Fore.GREEN + '\n'
-        '###################################################\n'
-        '######  Launching AWS CloudFormation Stacks  ######\n'
-        '###################################################'
+    print(Fore.WHITE + '\n'
+        '#############################################\n'
+        '######     DevOps /etc Static Site     ######\n'
+        '#############################################'
     )
 
     try:
-        cf.describe_stacks(StackName=dep_stk)
+        cf.describe_stacks(StackName=site)
     except ClientError as e:
         if e.response['Error']['Message'].endswith('does not exist'):
-            launch_stacks(cf, sec_stk, dep_stk, pip_stk, dep_tpl, sec_tpl,
-                pip_tpl, params, stacks)
+            launch_stack(cf, deploy_tpl, params, site)
     else:
-        print(Fore.RED + '\nStack already exists:', dep_stk)
-        prompt = Fore.YELLOW + '\nUpdate|Delete|Exit (U|D|X): ' + Fore.RESET
-        while "input invalid":
+        print (Fore.YELLOW + '\nStack Exists:' + site + '\n')
+        prompt = Fore.GREEN + '[U]pdate, [D]elete or [C]ancel (U,D,C): '
+        while True:
             reply = str(input(prompt)).lower().strip()
             if reply[:1] == 'u':
-                update_stacks(cf, sec_stk, dep_stk, pip_stk, dep_tpl, sec_tpl,
-                    pip_tpl, params, stacks)
+                update_stack(cf, deploy_tpl, params, site)
                 return True
-            if reply[:1] == 'd':
-                delete_stacks(cf, sec_stk, dep_stk, pip_stk, domain_nm, stacks)
+            elif reply[:1] == 'd':
+                delete_stack(cf, domain, region, site)
+                return True
+            elif reply[:1] == 'c':
                 return False
-            if reply[:1] == 'x':
-                return False
+            else:
+                print('\nInvalid, Try again\n')
 
-def launch_stacks(cf, sec_stk, dep_stk, pip_stk, dep_tpl, sec_tpl, pip_tpl,
-    params, stacks):
-    for stack in stacks:
-        if stack == dep_stk:
-            print('\nAn ACM SSL/TSL certificate will be generated and '
-                'validation email sent to:\n'
-                '\n- WHOIS listed domain registrant & technical/admin contacts'
-                '\n- Administrator, hostmaster, postmaster, webmaster & admin'
-                '@your_domain_name\n'
-                '\nYou need to click the approval link in ONE of them for '
-                'deployment to finish.'
-            )
-            wait = input(Fore.YELLOW + '\nPress enter to continue...')
+def launch_stack(cf, deploy_tpl, params, site):
+    print(Fore.GREEN + '\n'
+        'Multiple certificate validation emails will be sent to:\n\n'
+        '  - WHOIS listed domain contacts\n'
+        '  - Administrator|hostmaster|postmaster|webmaster|admin'
+        '@your_domain_name\n\n'
+        'Click the approval link in ONE in order to finish deployment.'
+    )
+    wait = input(Fore.YELLOW + '\nPress enter to continue...\n')
 
-        print('')
-        spin_start = '\n\nLaunching Stack: '+ stack
-        spinner = Halo(text=spin_start, spinner='circleHalves')
-        spinner.start()
+    with open(deploy_tpl, 'r') as f:
+        tmp_tpl = f.read()
 
-        if stack == sec_stk:
-            src_tpl = sec_tpl
-
-        if stack == dep_stk:
-            src_tpl = dep_tpl
-
-        if stack == pip_stk:
-            src_tpl = pip_tpl
-
-        with open(src_tpl, 'r') as f:
-            tmp_tpl = f.read()
-
+    try:
         cf.create_stack(
-            StackName=stack,
+            StackName=site,
             TemplateBody=tmp_tpl,
             Parameters=params,
-            TimeoutInMinutes=15,
             Capabilities=['CAPABILITY_NAMED_IAM'],
             OnFailure='ROLLBACK'
         )
 
+        spinner = Halo(text='Launching: '+ site, color='green').start()
         waiter = cf.get_waiter('stack_create_complete')
-        waiter.wait(StackName=stack)
+        waiter.wait(StackName=site)
+        spinner.succeed(text='Deployed: '+ site)
+    except ClientError as e:
+        error_string = 'Waiter encountered a terminal failure state'
+        if e.response['Error']['Message'].endswith(error_string):
+            print(Fore.RED + error_string + '\nSee AWS web console')
+        else:
+            print(Fore.RED + e.response['Error']['Message'])
 
-        spin_success = '\nStack Created: '+ stack
-        spinner.succeed(text=spin_success)
+def update_stack(cf, deploy_tpl, params, site):
+    with open(deploy_tpl, 'r') as f:
+        tmp_tpl = f.read()
 
-def update_stacks(cf, dep_stk, sec_stk, pip_stk, sec_tpl, dep_tpl, pip_tpl,
-    params, stacks):
-    for stack in stacks:
+    try:
+        cf.update_stack(
+            StackName=site,
+            TemplateBody=tmp_tpl,
+            Parameters=params,
+            Capabilities=['CAPABILITY_NAMED_IAM']
+        )
+
+        spinner = Halo(text='Updating: '+ site, color='green').start()
+        waiter = cf.get_waiter('stack_update_complete')
+        waiter.wait(StackName=site)
+        spinner.succeed(text='Updated: '+ site)
+    except ClientError as e:
+        error_string = 'No updates are to be performed.'
+        if e.response['Error']['Message'].endswith(error_string):
+            print(Fore.WHITE + '\n' + site + ' => ' + error_string + '\n')
+        else:
+            print(Fore.RED + e.response['Error']['Message'])
+
+def delete_stack(cf, domain, region, site):
+    buckets = [domain, 'log.' + domain, 'www.' + domain]
+
+    s3 = boto3.resource('s3', region_name=region)
+
+    for b in buckets:
         try:
-            print('')
-            spin_start = '\nUpdating Stack: '+ stack
-            spinner = Halo(text=spin_start, spinner='circleHalves')
-            spinner.start()
-
-            if stack == sec_stk:
-                src_tpl = sec_tpl
-
-            if stack == dep_stk:
-                src_tpl = dep_tpl
-
-            if stack == pip_stk:
-                src_tpl = pip_tpl
-
-            with open(src_tpl, 'r') as f:
-                tmp_tpl = f.read()
-
-            cf.update_stack(
-                StackName=stack,
-                TemplateBody=tmp_tpl,
-                Parameters=params,
-                Capabilities=['CAPABILITY_NAMED_IAM']
-            )
-
-            waiter = cf.get_waiter('stack_update_complete')
-            waiter.wait(StackName=stack)
-
-            spin_success = '\nStack Updated: '+ stack
-            spinner.succeed(text=spin_success)
+            s3.meta.client.head_bucket(Bucket=b)
         except ClientError as e:
-            error_string = 'No updates are to be performed.'
-            if e.response['Error']['Message'].endswith(error_string):
-                print(Fore.RED + ' ' + error_string)
-                quit()
-
-def delete_stacks(cf, dep_stk, sec_stk, pip_stk, domain_nm, stacks):
-    for stack in stacks:
-        print('')
-        spin_start = '\nDeleting Stack: '+ stack
-        spinner = Halo(text=spin_start, spinner='circleHalves')
-        spinner.start()
-
-        if stack == dep_stk:
+            if e.response['Error']['Message'].endswith('does not exist'):
+                pass
+        else:
             # Bucket can't be deleted unless empty
-            s3 = boto3.resource('s3', region_name=region_nm)
+            bucket = s3.Bucket(b)
+            bucket.objects.all().delete()
 
-            try:
-                s3.meta.client.head_bucket(Bucket=domain_nm)
-            except ClientError as e:
-                if e.response['Error']['Message'].endswith('does not exist'):
-                    pass
-            else:
-                bucket = s3.Bucket(domain_nm)
-                bucket.objects.all().delete()
+    cf.delete_stack(StackName=site)
 
-            try:
-                s3.meta.client.head_bucket(Bucket=domain_nm + '-log')
-            except ClientError as e:
-                if e.response['Error']['Message'].endswith('does not exist'):
-                    pass
-            else:
-                bucket_log = s3.Bucket(domain_nm + '-log')
-                bucket_log.objects.all().delete()
-
-        cf.delete_stack(StackName=stack)
-
-        waiter = cf.get_waiter('stack_delete_complete')
-        waiter.wait(StackName=stack)
-
-        spin_success = '\nStack Deleted: '+ stack
-        spinner.succeed(text=spin_success)
+    spinner = Halo(text='Deleting: '+ site, color='green').start()
+    waiter = cf.get_waiter('stack_delete_complete')
+    waiter.wait(StackName=site)
+    spinner.succeed(text='Deleted: '+ site)
 
 if __name__ == '__main__':
     main()

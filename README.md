@@ -2,7 +2,7 @@
 
 ### Automatic deployment of a secure, AWS S3-backed and CloudFront CDN-distributed, static website using Python, Boto3 and CloudFormation.
 
-Do you like setting up and maintaining the server that runs your blog? Do you like how slow your pages load from the CMS's database? How about how much money you're spending on hosting?! I didn't like any of these things, so I switched from a CMS to a statically generated website and migrated to an AWS S3 bucket served up by a CDN distribution using AWS CloudFront. This project, built with the AWS SDK for Python (Boto3) and CloudFormation, allows you to quickly deploy the requisite AWS infrastructure needed to host your blog inexpensively and to serve it up fast.
+Do you like setting up and maintaining the server that runs your blog? Do you like how slow your pages load from the CMS's database? How about how much money you're spending on hosting?! I didn't like any of these things, so I switched from a CMS to a statically generated website hosted on an AWS S3 bucket, and served up by a AWS CloudFront CDN distribution. This project, built with the AWS SDK for Python (Boto3) and CloudFormation, allows you to quickly deploy the requisite AWS infrastructure needed to host a static website, serve it up fast, and spend relatively little money.
 
 Code walkthrough and additional information can be found at:  [DevOpsEtc.com/post/s3-cf-static-site](https://DevOpsEtc.com/post/s3-cf-static-site)
 
@@ -16,12 +16,13 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
   * MacOS High Sierra (should work on other versions and Linux too, but YMMV)
   * Python 3: $ brew install python3
   * GoAccess: $ brew install goaccess # optional visual web log analyzer
-  * Python Modules: $ pip3 install awscli boto3 colorama (sudo may be needed for elevated privileges)
+  * Python Modules: $ pip3 install awscli boto3 colorama halo (sudo may be needed for elevated privileges)
   * Amazon Web Services account (if new to AWS, there's a year long free-tier plan available)
   * AWS credentials: $ aws configure (paste in access keys from AWS management console)
   * Custom domain name
   * AWS Route 53 hosted zone for your domain name
-  * Valid email@your_domain_name that's a catch-all address (for certificate validation)
+  * Valid email@your_domain_name that's a catch-all address or valid address on WHOIS listing (for certificate validation)
+  * Cup of coffee while you wait for stack to provision resources. CloudFront distributions need to propagate to the AWS edge locations.
 
 **Script Output Screenshot:**
 
@@ -34,11 +35,10 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
   * One IAM group
   * One IAM group policy
   * One IAM user
-  * Two S3 buckets
-  - Two CloudFront distributions
-  - Two Route 53 DNS records
+  * Three S3 buckets (domain, log and www redirect)
+  - Two CloudFront distributions (domain and www redirect)
+  - Two Route 53 DNS records (domain and www redirect)
   - One CodeCommit repository
-  - One local git repository
   * Region: us-east-1 (for ACM certificate/CloudFront compatibility)
 
 **Getting Started:**
@@ -52,13 +52,17 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
     # Run script
     $ cd ~/DevOpsEtc/s3-cf-static-site && ./deploy.py
 
+
+    ## Other Commands ###################################
+
+
     # Update CloudFormation stack with template changes
     $ cd ~/DevOpsEtc/s3-cf-static-site && ./deploy.py
-    $ U # enter after prompt: Update|Delete|Exit (U|D|X)
+    $ U # enter after prompt: [U]pdate, [D]elete or [C]ancel (U,D,C):
 
     # Delete CloudFormation stack and rollback updates/initial launch resources
     $ cd ~/DevOpsEtc/s3-cf-static-site && ./deploy.py
-    $ D # enter after prompt: Update|Delete|Exit (U|D|X)
+    $ D # enter after prompt: [U]pdate, [D]elete or [C]ancel (U,D,C):
 
     # Invalidate objects from CloudFront edge caches
     $ dist_id=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Aliases.Items, 'your_distro_alias')].Id" --output text) && aws cloudfront create-invalidation --distribution-id $dist_id --paths "/*"
@@ -106,6 +110,8 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
 
 **Notes:**    
 Running this script will launch an AWS CloudFormation stack that provisions, among other things, S3 buckets and CloudFront distributions, both of which incur minimal service fees... i.e. don't forget to delete the stack when it's no longer needed!
+
+Depending on your connection speed and time of day, the CloudFormation stack in this project may take up to 30 minutes to fully provision all AWS resources.
 
 **Known Issues:**
 - None
