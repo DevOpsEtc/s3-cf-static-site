@@ -108,7 +108,9 @@ def launch_stack(cf, deploy_tpl, domain, params, s3, site):
     }
     for k, v in files.items():
         print('\nCopying file: ' + k + ' => ' + domain + '/' + k)
-        s3.meta.client.upload_file('build/'+k, domain, v)
+        s3.meta.client.upload_file('build/'+k, domain, v, ExtraArgs=
+            {'ContentType': 'text/html'}
+        )
 
 def update_stack(cf, deploy_tpl, params, site):
     with open(deploy_tpl, 'r') as f:
