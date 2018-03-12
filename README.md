@@ -1,4 +1,4 @@
-<h1> <img src="image/logo.png"> DevOps /etc</h1>
+<h1> <img src="build/image/gear_logo.png"> DevOps /etc</h1>
 
 ### Automatic deployment of a secure, AWS S3-backed and CloudFront CDN-distributed, static website using Python, Boto3 and CloudFormation.
 
