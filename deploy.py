@@ -35,7 +35,6 @@ def main():
         {"ParameterKey": "DomainName","ParameterValue": domain},
         {"ParameterKey": "SiteName","ParameterValue": site},
     ]
-    buckets = [domain, 'log.' + domain, 'www.' + domain]
     s3 = boto3.resource('s3', region_name=region)
     cf = boto3.client('cloudformation', region_name=region)
 
@@ -136,6 +135,7 @@ def update_stack(cf, deploy_tpl, params, site):
             print(Fore.RED + e.response['Error']['Message'])
 
 def delete_stack(cf, domain, region, s3, site):
+    buckets = [domain, 'log.' + domain, 'www.' + domain]
     for b in buckets:
         try:
             s3.meta.client.head_bucket(Bucket=b)
