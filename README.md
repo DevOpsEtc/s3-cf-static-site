@@ -26,9 +26,9 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
 
 **Script Output Screenshot:**
 
-  <p align="center"> <img src="image/output1.png"></p>
+  <p align="center"> <img src="build/image/output1.png"></p>
 
-  <p align="center"> <img src="image/stack_exists.png"></p>
+  <p align="center"> <img src="build/image/stack_exists.png"></p>
 
 **What Gets Provisioned:**
   * One ACM SSL/TLS certificate
