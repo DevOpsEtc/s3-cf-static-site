@@ -35,6 +35,8 @@ def main():
         {"ParameterKey": "DomainName","ParameterValue": domain},
         {"ParameterKey": "SiteName","ParameterValue": site},
     ]
+    buckets = [domain, 'log.' + domain, 'www.' + domain]
+    s3 = boto3.resource('s3', region_name=region)
     cf = boto3.client('cloudformation', region_name=region)
 
     # AWS_account = boto3.client('sts').get_caller_identity()['Account']
@@ -52,7 +54,7 @@ def main():
         cf.describe_stacks(StackName=site)
     except ClientError as e:
         if e.response['Error']['Message'].endswith('does not exist'):
-            launch_stack(cf, deploy_tpl, params, site)
+            launch_stack(cf, deploy_tpl, params, s3, site)
     else:
         print (Fore.YELLOW + '\nStack Exists:' + site + '\n')
         prompt = Fore.GREEN + '[U]pdate, [D]elete or [C]ancel (U,D,C): '
@@ -62,14 +64,14 @@ def main():
                 update_stack(cf, deploy_tpl, params, site)
                 return True
             elif reply[:1] == 'd':
-                delete_stack(cf, domain, region, site)
+                delete_stack(cf, domain, region, s3, site)
                 return True
             elif reply[:1] == 'c':
                 return False
             else:
                 print('\nInvalid, Try again\n')
 
-def launch_stack(cf, deploy_tpl, params, site):
+def launch_stack(cf, deploy_tpl, params, s3, site):
     print(Fore.GREEN + '\n'
         'Multiple certificate validation emails will be sent to:\n\n'
         '  - WHOIS listed domain contacts\n'
@@ -102,8 +104,13 @@ def launch_stack(cf, deploy_tpl, params, site):
         else:
             print(Fore.RED + e.response['Error']['Message'])
 
-    print('\nCopying test page to S3 bucket:' + domain)
-    subprocess.run('aws s3 cp build s3://' +domain+ ' --recursive', shell=True)
+    files = {
+        'index.html': 'index.html',
+        'image/gear_logo.png': 'image/gear_logo.png'
+    }
+    for k, v in files.items():
+        print('\nCopying file: ' + k + ' => ' + domain + '/' + k)
+        s3.meta.client.upload_file('build/'+k, domain, v)
 
 def update_stack(cf, deploy_tpl, params, site):
     with open(deploy_tpl, 'r') as f:
@@ -128,11 +135,7 @@ def update_stack(cf, deploy_tpl, params, site):
         else:
             print(Fore.RED + e.response['Error']['Message'])
 
-def delete_stack(cf, domain, region, site):
-    buckets = [domain, 'log.' + domain, 'www.' + domain]
-
-    s3 = boto3.resource('s3', region_name=region)
-
+def delete_stack(cf, domain, region, s3, site):
     for b in buckets:
         try:
             s3.meta.client.head_bucket(Bucket=b)
