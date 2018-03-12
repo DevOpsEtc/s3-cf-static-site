@@ -22,7 +22,7 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
   * Custom domain name
   * AWS Route 53 hosted zone for your domain name
   * Valid email@your_domain_name that's a catch-all address or valid address on WHOIS listing (for certificate validation)
-  * Cup of coffee while you wait for stack to provision resources. CloudFront distributions need to propagate to the AWS edge locations.
+  * Cup of coffee while you wait for stack to provision resources
 
 **Script Output Screenshot:**
 
@@ -36,9 +36,9 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
   * One IAM group policy
   * One IAM user
   * Three S3 buckets (domain, log and www redirect)
-  - Two CloudFront distributions (domain and www redirect)
-  - Two Route 53 DNS records (domain and www redirect)
-  - One CodeCommit repository
+  * Two CloudFront distributions (domain and www redirect)
+  * Two Route 53 DNS records (domain and www redirect)
+  * One CodeCommit repository
   * Region: us-east-1 (for ACM certificate/CloudFront compatibility)
 
 **Getting Started:**
@@ -54,7 +54,6 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
 
 
     ## Other Commands ###################################
-
 
     # Update CloudFormation stack with template changes
     $ cd ~/DevOpsEtc/s3-cf-static-site && ./deploy.py
@@ -111,7 +110,7 @@ Code walkthrough and additional information can be found at:  [DevOpsEtc.com/pos
 **Notes:**    
 Running this script will launch an AWS CloudFormation stack that provisions, among other things, S3 buckets and CloudFront distributions, both of which incur minimal service fees... i.e. don't forget to delete the stack when it's no longer needed!
 
-Depending on your connection speed and time of day, the CloudFormation stack in this project may take up to 30 minutes to fully provision all AWS resources.
+Depending on your connection speed and time of day, the CloudFormation stack in this project may take up to 30+ minutes to fully provision all AWS resources. In particular, CloudFront distributions need to propagate to the AWS edge locations.
 
 **Known Issues:**
 - None
