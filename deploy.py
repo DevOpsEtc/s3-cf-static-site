@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import subprocess
 import boto3
 from botocore.exceptions import ClientError
 from colorama import init, Fore
@@ -100,6 +101,9 @@ def launch_stack(cf, deploy_tpl, params, site):
             print(Fore.RED + error_string + '\nSee AWS web console')
         else:
             print(Fore.RED + e.response['Error']['Message'])
+
+    print('\nCopying test page to S3 bucket:' + domain)
+    subprocess.run('aws s3 cp build s3://' +domain+ ' --recursive', shell=True)
 
 def update_stack(cf, deploy_tpl, params, site):
     with open(deploy_tpl, 'r') as f:

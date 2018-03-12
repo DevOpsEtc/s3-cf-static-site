@@ -116,10 +116,10 @@ Depending on your connection speed and time of day, the CloudFormation stack in 
 - None
 
 **Road Map:**
-- Add static website boilerplate content
 - Add instructions for Hugo static generator install and config
 - Add Python function to create local/remote repos and push initial build to remote
 - Add CloudFormation resources for CI/CD workflow (CodeCommit, CodePipeline, CodeBuild, CodeDeploy)
+- Add CloudWatch billing alerts
 
 **Contributing:**
 1. Review open issues
