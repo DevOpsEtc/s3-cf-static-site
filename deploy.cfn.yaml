@@ -28,7 +28,14 @@ Resources:
       BucketName: !Ref DomainName
       WebsiteConfiguration:
         IndexDocument: index.html
-
+        ErrorDocument: 404.html
+        RoutingRules:
+        - RoutingRuleCondition:
+            HttpErrorCodeReturnedEquals: '404'
+            KeyPrefixEquals: out1/
+          RedirectRule:
+            HostName: ec2-11-22-333-44.compute-1.amazonaws.com
+            ReplaceKeyPrefixWith: report-404/
   SiteBucketLog:
     Type: AWS::S3::Bucket
     Properties:
