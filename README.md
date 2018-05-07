@@ -1,8 +1,8 @@
 <h1> <img src="build/image/gear_logo.png"> DevOps /etc</h1>
 
-### Automatic deployment of a secure, AWS S3-backed and CloudFront CDN-distributed, static website using Python, Boto3 and CloudFormation.
+### Static Website on AWS S3 served by CloudFront CDN
 
-A site built with static site generator, Hugo, hosted on AWS S3, and served up via the AWS CloudFront CDN. This project, built with the AWS SDK for Python (Boto3) and CloudFormation, allows you to quickly deploy the requisite AWS infrastructure needed to host a secure, static website, serve it up fast, and spend relatively little money in the process.
+A static website hosted on an S3 bucket and served up fast via the CloudFront CDN. This project initially focuses on the deployment of infrastructure and uses the AWS SDK for Python (Boto3) and CloudFormation for quick builds, updates and tear-downs of infrastructure, security policies, logging and encryption. It will be updated soon with local development setup and CI/CD workflow.
 
 Blog post with additional information can be found at:  [DevOpsEtc.com/post/s3-cf-static-site](https://DevOpsEtc.com/post/s3-cf-static-site)
 
