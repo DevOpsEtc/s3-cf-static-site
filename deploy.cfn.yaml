@@ -146,7 +146,7 @@ Resources:
             HostedZoneId: Z2FDTNDATAQYW2 # required AWS CloudFront zone
             DNSName: !GetAtt SiteDistroRedirect.DomainName
 
-  BlogRepo:
+  SiteRepo:
     Type: AWS::CodeCommit::Repository
     Properties:
       RepositoryName: !Ref DomainName
