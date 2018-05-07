@@ -4,7 +4,7 @@
 
 A static website hosted on an S3 bucket and served up fast via the CloudFront CDN. This project initially focuses on the deployment of infrastructure and uses the AWS SDK for Python (Boto3) and CloudFormation for quick builds, updates and tear-downs of infrastructure, security policies, logging and encryption. It will be updated soon with local development setup and CI/CD workflow.
 
-Blog post with additional information can be found at:  [DevOpsEtc.com/post/s3-cf-static-site](https://DevOpsEtc.com/post/s3-cf-static-site)
+Blog post with additional information can be found at:  [https://devopsetc.com/post/aws-s3-static-website/](https://devopsetc.com/post/aws-s3-static-website/)
 
 **Known Issues:**
 - None
