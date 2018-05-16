@@ -4,6 +4,9 @@ import boto3
 from botocore.exceptions import ClientError
 from colorama import init, Fore
 from halo import Halo
+import os
+import subprocess
+import key_gen
 
 def main():
     """Create/Update/Delete CloudFormation stack to deploy S3 static website.
@@ -29,24 +32,30 @@ def main():
     region = 'us-east-1' # overide any local AWS config; needed for ACM cert
     site = 'Static-Site'
     deploy_tpl = 'deploy.cfn.yaml'
-    domain = 'devopsetc.com'
-    params =  [
-        {"ParameterKey": "DomainName","ParameterValue": domain},
-        {"ParameterKey": "SiteName","ParameterValue": site},
+    if not 'domain_name' in os.environ:
+        print(Fore.YELLOW + '\nYou forgot to enter your domain name first:')
+        print(Fore.YELLOW + '$ export domain_name=your_domain.com')
+        exit()
+    domain = os.environ['domain_name']
+    domain_root = domain.split('.')[0]
+    home = os.path.expanduser('~/')
+    site_path = home + domain
+
+    params = [
+    {"ParameterKey": "DomainName","ParameterValue": domain},
+    {"ParameterKey": "SiteName","ParameterValue": site},
     ]
+
     s3 = boto3.resource('s3', region_name=region)
     cf = boto3.client('cloudformation', region_name=region)
 
-    # AWS_account = boto3.client('sts').get_caller_identity()['Account']
-
-    # set which AWS credentials to use for this session
-    # boto3.setup_default_session(profile_name=site)
-
-    print(Fore.WHITE + '\n'
-        '#############################################\n'
-        '######     DevOps /etc Static Site     ######\n'
-        '#############################################'
+    print(Fore.WHITE +
+        '\n#############################################'
+        '\nStatic Site: ',Fore.WHITE + domain, Fore.WHITE +
+        '\n#############################################'
     )
+
+    key_gen.main(site, home, region)
 
     try:
         cf.describe_stacks(StackName=site)
@@ -54,20 +63,23 @@ def main():
         if e.response['Error']['Message'].endswith('does not exist'):
             launch_stack(cf, deploy_tpl, domain, params, s3, site)
     else:
-        print (Fore.YELLOW + '\nStack Exists:' + site + '\n')
+        print(Fore.YELLOW + '\nExisting CloudFormation stack found:',
+            Fore.YELLOW + site + '\n')
         prompt = Fore.GREEN + '[U]pdate, [D]elete or [C]ancel (U,D,C): '
         while True:
-            reply = str(input(prompt)).lower().strip()
+            reply = str(input(prompt)).lower()
             if reply[:1] == 'u':
                 update_stack(cf, deploy_tpl, params, site)
                 return True
             elif reply[:1] == 'd':
-                delete_stack(cf, domain, region, s3, site)
-                return True
+                if input(Fore.RED + "\nConfirm stack deletion (y/n)? ") == "y":
+                    delete_stack(cf, domain, region, s3, site)
+                    return True
+                return False
             elif reply[:1] == 'c':
                 return False
             else:
-                print('\nInvalid, Try again\n')
+                print(Fore.RED + '\nInvalid, Try again\n')
 
 def launch_stack(cf, deploy_tpl, domain, params, s3, site):
     print(Fore.GREEN + '\n'
@@ -101,16 +113,6 @@ def launch_stack(cf, deploy_tpl, domain, params, s3, site):
             print(Fore.RED + error_string + '\nSee AWS web console')
         else:
             print(Fore.RED + e.response['Error']['Message'])
-
-    files = {
-        'index.html': 'index.html',
-        'image/gear_logo.png': 'image/gear_logo.png'
-    }
-    for k, v in files.items():
-        print('\nCopying file: ' + k + ' => ' + domain + '/' + k)
-        s3.meta.client.upload_file('build/'+k, domain, v, ExtraArgs=
-            {'ContentType': 'text/html'}
-        )
 
 def update_stack(cf, deploy_tpl, params, site):
     with open(deploy_tpl, 'r') as f:
