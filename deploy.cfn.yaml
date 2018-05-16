@@ -11,7 +11,7 @@ Parameters:
     Description: 'name of domain pointing to static website, e.g domain.com'
     Type: String
   SiteName:
-    Description: 'group with admin level access to S3 and cloudfront'
+    Description: 'admin level access to S3, cloudfront and codecommit'
     Type: String
 
 Resources:
