@@ -7,6 +7,7 @@ from halo import Halo
 import os
 import subprocess
 import key_gen
+import dev_env
 
 def main():
     """Create/Update/Delete CloudFormation stack to deploy S3 static website.
@@ -29,34 +30,32 @@ def main():
     via a delete.
     """
 
-    region = 'us-east-1' # overide any local AWS config; needed for ACM cert
-    site = 'Static-Site'
-    deploy_tpl = 'deploy.cfn.yaml'
     if not 'domain_name' in os.environ:
         print(Fore.YELLOW + '\nYou forgot to enter your domain name first:')
         print(Fore.YELLOW + '$ export domain_name=domain.com')
         exit()
     domain = os.environ['domain_name']
     domain_root = domain.split('.')[0]
+    deploy_tpl = 'deploy.cfn.yaml'
     home = os.path.expanduser('~/')
+    region = 'us-east-1' # overide any local AWS config; needed for ACM cert
+    repo_base = 'git-codecommit.' + region + '.amazonaws.com'
+    repo_url = 'ssh://' + repo_base + '/v1/repos/' + domain
+    site = 'Static-Site'
     site_path = home + domain
-    acc_id = boto3.client('sts').get_caller_identity()['Account']
+
+    account = boto3.client('sts').get_caller_identity()['Account']
     s3 = boto3.resource('s3', region_name=region)
     cf = boto3.client('cloudformation', region_name=region)
+
     params = [
-    {"ParameterKey": "AccountId","ParameterValue": acc_id},
+    {"ParameterKey": "AccountId","ParameterValue": account},
     {"ParameterKey": "DomainName","ParameterValue": domain},
     {"ParameterKey": "RegionName","ParameterValue": region},
     {"ParameterKey": "SiteName","ParameterValue": site}
     ]
 
-    print(Fore.WHITE +
-        '\n#############################################'
-        '\nStatic Site: ',Fore.WHITE + domain, Fore.WHITE +
-        '\n#############################################'
-    )
-
-    key_gen.main(site, home, region)
+    print(Fore.WHITE + '\nStatic Site Deploy (' + domain + '):\n' + Fore.RESET)
 
     try:
         cf.describe_stacks(StackName=site)
@@ -64,9 +63,9 @@ def main():
         if e.response['Error']['Message'].endswith('does not exist'):
             launch_stack(cf, deploy_tpl, domain, params, s3, site)
     else:
-        print(Fore.YELLOW + '\nExisting CloudFormation stack found:',
+        print(Fore.YELLOW + 'Existing CloudFormation stack found:',
             Fore.YELLOW + site + '\n')
-        prompt = Fore.GREEN + '[U]pdate, [D]elete or [C]ancel (U,D,C): '
+        prompt = Fore.GREEN + 'Skip, Update or Delete (S,U,D)? ' + Fore.RESET
         while True:
             reply = str(input(prompt)).lower()
             if reply[:1] == 'u':
@@ -77,10 +76,19 @@ def main():
                     delete_stack(cf, domain, region, s3, site)
                     return True
                 return False
-            elif reply[:1] == 'c':
-                return False
+            elif reply[:1] == 's':
+                break
             else:
-                print(Fore.RED + '\nInvalid, Try again\n')
+                print(Fore.RED + '\nInvalid... only S, U or D!\n')
+
+    print(Fore.WHITE + '\nRSA Key Generation:' + Fore.RESET)
+    key_gen.main(site, home, repo_base)
+
+    if not os.path.isdir(site_path + '/src/.git/'):
+        print(Fore.WHITE + '\nDev Environment Prep:' + Fore.RESET)
+        dev_env.main(repo_url, site_path, domain)
+
+    print(Fore.YELLOW + '\nGoodbye!')
 
 def launch_stack(cf, deploy_tpl, domain, params, s3, site):
     print(Fore.GREEN + '\n'

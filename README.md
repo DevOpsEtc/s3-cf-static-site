@@ -1,4 +1,4 @@
-<h1> <img src="build/image/gear_logo.png"> DevOps /etc</h1>
+<h1> <img src="build/img/logo.png"> DevOps /etc</h1>
 
 ### Static Website on AWS S3 served by CloudFront CDN
 

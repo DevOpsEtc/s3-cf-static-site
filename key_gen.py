@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 
 import boto3
-from botocore.exceptions import ClientError
 from colorama import init, Fore
-from halo import Halo
 import os
+import sys
 import subprocess
 import time
 
-def main(site, home, region):
+def main(site, home, repo_base):
     """Generates RSA public key to be used for git access to AWS CodeCommit
     repository. Generates locally, adds SSH alias to config, then uploads to
     AWS IAM user.
     """
 
     site_key = home + '.ssh/' + site + '-Key'
-    aws_ssh_host = 'git-codecommit.' + region + '.amazonaws.com'
     iam = boto3.client('iam')
 
     response = iam.list_ssh_public_keys(UserName=site + '-Admin')
@@ -23,9 +21,9 @@ def main(site, home, region):
     if len(response['SSHPublicKeys']) > 0:
         print(Fore.YELLOW + '\nExisting public key found for IAM user',
             Fore.YELLOW + site + '-Admin...')
-        if input(Fore.GREEN + "\nRotate key (y/n)? ") == "y":
+        if input(Fore.GREEN + "\nRotate key (y/n)? "+ Fore.RESET) == "y":
             pub_key_id = response['SSHPublicKeys'][0]['SSHPublicKeyId']
-            print(Fore.RESET + '\nRemoving existing public key for IAM user',
+            print('\nRemoving existing public key for IAM user',
                 site + '-Admin...')
             iam.delete_ssh_public_key(
                 UserName=site + '-Admin',
@@ -41,11 +39,11 @@ def main(site, home, region):
                     'host...')
                 os.remove(home + '.ssh/config.d/' + site)
 
-            if aws_ssh_host in open(home + '.ssh/known_hosts').read():
+            if repo_base in open(home + '.ssh/known_hosts').read():
                 print('\nRemoving AWS CodeCommit host from ' + home +
                     '.ssh/known_hosts...\n')
                 subprocess.run(
-                    'ssh-keygen -R ' + aws_ssh_host,
+                    'ssh-keygen -R ' + repo_base,
                     shell=True
                 )
 
@@ -58,7 +56,14 @@ def main(site, home, region):
             shell=True
         )
 
-        print('Setting file mode on private key to 400...')
+        if sys.platform.startswith('darwin'):
+            print('\nAdding new private key to ssh-agent & OSX keychain...')
+            subprocess.run('/usr/bin/ssh-add -K ' + site_key, shell=True)
+        elif sys.platform.startswith('linux'):
+            print('\nAdding new private key to ssh-agent...')
+            subprocess.run('ssh-add' + site_key, shell=True)
+
+        print('\nSetting file mode on private key to 400...')
         os.chmod(site_key, 0o400)
 
         print('\nUploading new public key for IAM user', site + '-Admin...')
@@ -102,24 +107,17 @@ def main(site, home, region):
             config.writelines(txt_lines)
 
         print('\nSetting file permissions on new SSH config to 600...')
-        os.chmod(ssh_cfg, 0o600)
+        os.chmod(site_key, 0o600)
 
-        print('\nAdding AWS CodeCommit host to ' + home +
-            '.ssh/known_hosts...\n')
-        subprocess.run(
-            'ssh-keyscan -t rsa -H ' + aws_ssh_host + ' >> ~/.ssh/known_hosts',
-            shell=True
-        )
-
-        print(Fore.YELLOW + '\nWaiting 5 seconds for AWS latency...')
+        print(Fore.YELLOW + '\nWaiting 5 seconds for any AWS latency...')
         time.sleep( 5 )
 
-        print('\nTesting new AWS CodeCommit SSH config...')
-        subprocess.run('ssh ' + aws_ssh_host, shell=True)
-        # subprocess.run(
-        #     'ssh -o StrictHostKeyChecking=no -tt ' + aws_ssh_host,
-        #     shell=True
-        # )
+        print('\nAdding AWS CodeCommit host to known_hosts and testing SSH '
+            'config...\n')
+        subprocess.run(
+            'ssh -o StrictHostKeyChecking=no -tt ' + repo_base,
+            shell=True
+        )
 
 if __name__ == '__main__':
     main()
