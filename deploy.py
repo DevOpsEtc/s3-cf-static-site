@@ -36,13 +36,13 @@ def main():
         exit()
     domain = os.environ['domain_name']
     domain_root = domain.split('.')[0]
-    deploy_tpl = 'deploy.cfn.yaml'
     home = os.path.expanduser('~/')
+    site_path = home + domain
+    deploy_tpl = site_path + '/deploy/cfn/site.cfn.yaml'
     region = 'us-east-1' # overide any local AWS config; needed for ACM cert
     repo_base = 'git-codecommit.' + region + '.amazonaws.com'
     repo_url = 'ssh://' + repo_base + '/v1/repos/' + domain
     site = 'Static-Site'
-    site_path = home + domain
 
     account = boto3.client('sts').get_caller_identity()['Account']
     s3 = boto3.resource('s3', region_name=region)
@@ -86,7 +86,7 @@ def main():
 
     if not os.path.isdir(site_path + '/src/.git/'):
         print(Fore.WHITE + '\nDev Environment Prep:' + Fore.RESET)
-        dev_env.main(repo_url, site_path, domain)
+        dev_env.main(home, repo_url, site_path, domain)
 
     print(Fore.YELLOW + '\nGoodbye!')
 

@@ -2,6 +2,7 @@
 
 import boto3
 from colorama import init, Fore
+import getpass
 import os
 import sys
 import subprocess
@@ -30,6 +31,13 @@ def main(site, home, repo_base):
                 SSHPublicKeyId=pub_key_id
             )
 
+            print('\nRemoving existing private key from ssh-agent...')
+            subprocess.run(
+                '[[ $(ssh-add -l | grep \' '+ site_key + ' \') ]] \
+                    && ssh-add -d ' + site_key,
+                shell=True
+            )
+
             if os.path.isfile(site_key):
                 print('\nRemoving existing private key:', site_key + '...')
                 os.remove(site_key)
@@ -49,10 +57,11 @@ def main(site, home, repo_base):
 
     response = iam.list_ssh_public_keys(UserName=site + '-Admin')
     if len(response['SSHPublicKeys']) == 0:
-        key_pass = input('\nEnter passphrase for new private key: ')
+        key_pass = getpass.getpass('\nEnter passphrase for new private key: ')
         print('\nGenerating new private key:', site_key + '...\n')
         subprocess.run(
-            'ssh-keygen -t rsa -b 2048 -f ' +site_key+ ' -P ' +key_pass,
+            'ssh-keygen -t rsa -b 2048 -f ' + site_key + ' -C ' + site_key + \
+                ' -P ' + key_pass,
             shell=True
         )
 
@@ -106,7 +115,7 @@ def main(site, home, repo_base):
             ]
             config.writelines(txt_lines)
 
-        print('\nSetting file permissions on new SSH config to 600...')
+        print('\nSetting file mode on new SSH config to 600...')
         os.chmod(site_key, 0o600)
 
         print(Fore.YELLOW + '\nWaiting 5 seconds for any AWS latency...')
