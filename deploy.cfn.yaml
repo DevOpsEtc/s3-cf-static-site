@@ -7,11 +7,17 @@ Description:  >
   CodePipeline pipeline.
 
 Parameters:
+  AccountId:
+    Description: 'aws account id'
+    Type: String
   DomainName:
     Description: 'name of domain pointing to static website, e.g domain.com'
     Type: String
+  RegionName:
+    Description: ''
+    Type: String
   SiteName:
-    Description: 'admin level access to S3, cloudfront and codecommit'
+    Description: ''
     Type: String
 
 Resources:
@@ -181,8 +187,21 @@ Resources:
               - !Sub 'arn:aws:s3:::log.${SiteBucket}'
           - Sid:  CodeCommitAdminAccess
             Effect: "Allow"
-            Action: "*"
+            Action:
+              - codecommit:BatchGet*
+              - codecommit:Get*
+              - codecommit:List*
+              - codecommit:Create*
+              - codecommit:DeleteBranch
+              - codecommit:Describe*
+              - codecommit:Put*
+              - codecommit:Post*
+              - codecommit:Merge*
+              - codecommit:Test*
+              - codecommit:Update*
+              - codecommit:GitPull
+              - codecommit:GitPush
             Resource:
-              - !Sub 'arn:aws:codecommit:::${DomainName}*'
+              - !Sub 'arn:aws:codecommit:${RegionName}:${AccountId}:${DomainName}'
       Groups:
         - Ref: IAMUserGroup

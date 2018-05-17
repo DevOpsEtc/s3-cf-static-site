@@ -34,20 +34,21 @@ def main():
     deploy_tpl = 'deploy.cfn.yaml'
     if not 'domain_name' in os.environ:
         print(Fore.YELLOW + '\nYou forgot to enter your domain name first:')
-        print(Fore.YELLOW + '$ export domain_name=your_domain.com')
+        print(Fore.YELLOW + '$ export domain_name=domain.com')
         exit()
     domain = os.environ['domain_name']
     domain_root = domain.split('.')[0]
     home = os.path.expanduser('~/')
     site_path = home + domain
-
-    params = [
-    {"ParameterKey": "DomainName","ParameterValue": domain},
-    {"ParameterKey": "SiteName","ParameterValue": site},
-    ]
-
+    acc_id = boto3.client('sts').get_caller_identity()['Account']
     s3 = boto3.resource('s3', region_name=region)
     cf = boto3.client('cloudformation', region_name=region)
+    params = [
+    {"ParameterKey": "AccountId","ParameterValue": acc_id},
+    {"ParameterKey": "DomainName","ParameterValue": domain},
+    {"ParameterKey": "RegionName","ParameterValue": region},
+    {"ParameterKey": "SiteName","ParameterValue": site}
+    ]
 
     print(Fore.WHITE +
         '\n#############################################'
