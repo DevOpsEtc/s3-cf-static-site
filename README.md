@@ -1,8 +1,13 @@
-<h1> <img src="build/img/logo.png"> DevOps /etc</h1>
+<h1> <img src="img/logo.png"> DevOps /etc</h1>
 
-### Static Website on AWS S3 served by CloudFront CDN
+### Static Site on AWS S3 and CloudFront CDN
 
-A static website hosted on an S3 bucket and served up fast via the CloudFront CDN. This project initially focuses on the deployment of infrastructure and uses the AWS SDK for Python (Boto3) and CloudFormation for quick builds, updates and tear-downs of infrastructure, security policies, logging and encryption. It will be updated soon with CI/CD workflow.
+A static site hosted on an S3 bucket, and served up fast via the CloudFront CDN. This project consists of three parts. Part one, deploys AWS infrastructure and supporting services using the AWS SDK for Python (Boto3) and CloudFormation, resulting in quick builds, updates and tear-downs. Part two, prepares a development environment, including repo,
+
+security
+integrated with part three
+
+with a cloned repo,  
 
 Blog post with additional information can be found at:  [https://devopsetc.com/post/aws-s3-static-website/](https://devopsetc.com/post/aws-s3-static-website/)
 

@@ -38,10 +38,11 @@ def main():
     domain_root = domain.split('.')[0]
     home = os.path.expanduser('~/')
     site_path = home + domain
-    deploy_tpl = site_path + '/deploy/cfn/site.cfn.yaml'
+    deploy_tpl = './deploy/site.cfn.yaml'
     region = 'us-east-1' # overide any local AWS config; needed for ACM cert
     repo_base = 'git-codecommit.' + region + '.amazonaws.com'
-    repo_url = 'ssh://' + repo_base + '/v1/repos/' + domain
+    repo_https = 'https://' + repo_base + '/v1/repos/' + domain
+    repo_ssh = 'ssh://' + repo_base + '/v1/repos/' + domain
     site = 'Static-Site'
 
     account = boto3.client('sts').get_caller_identity()['Account']
@@ -49,9 +50,8 @@ def main():
     cf = boto3.client('cloudformation', region_name=region)
 
     params = [
-    {"ParameterKey": "AccountId","ParameterValue": account},
     {"ParameterKey": "DomainName","ParameterValue": domain},
-    {"ParameterKey": "RegionName","ParameterValue": region},
+    {"ParameterKey": "RepoURL","ParameterValue": repo_https},
     {"ParameterKey": "SiteName","ParameterValue": site}
     ]
 
@@ -86,7 +86,7 @@ def main():
 
     if not os.path.isdir(site_path + '/src/.git/'):
         print(Fore.WHITE + '\nDev Environment Prep:' + Fore.RESET)
-        dev_env.main(home, repo_url, site_path, domain)
+        dev_env.main(home, repo_ssh, site_path, domain)
 
     print(Fore.YELLOW + '\nGoodbye!')
 

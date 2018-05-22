@@ -5,7 +5,7 @@ import os
 import subprocess
 import sys
 
-def main(home, repo_url, site_path, domain):
+def main(home, repo_ssh, site_path, domain):
 
     """Prepares the development environment with code repository cloning.
     """
@@ -15,7 +15,7 @@ def main(home, repo_url, site_path, domain):
 
     print('\nCloning AWS CodeCommit repo for static site...\n')
     subprocess.run(
-        'git clone ' + repo_url + ' ' + site_path + '/src',
+        'git clone ' + repo_ssh + ' ' + site_path + '/src',
         shell=True
     )
 
