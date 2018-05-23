@@ -7,20 +7,45 @@ import sys
 
 def main(home, repo_ssh, site_path, domain):
 
-    """Prepares the development environment with code repository cloning.
+    """Bootstraps a development environment with package installation, sample
+    static website, repo cloning and ad-hoc management commands.
     """
 
     logs = site_path + '/logs'  # raw log path
     report = '_report.html'     # log report name
+    hugo_ver = subprocess.check_output(
+        'curl --silent \
+            "https://api.github.com/repos/gohugoio/hugo/releases/latest" | \
+            grep "tag_name" | awk -Fv \'{gsub("\\"\,", ""); print $2}\'',
+          shell=True,
+          universal_newlines=True
+    ).strip()
+    cf_distro = subprocess.check_output(
+        'aws cloudfront list-distributions --query "DistributionList.Items[? \
+            contains(Aliases.Items, \'' + domain + '\')].Id" --output text',
+          shell=True,
+          universal_newlines=True
+    ).strip()
 
-    print('\nCloning AWS CodeCommit repo for static site...\n')
+    print('\nCloning the new, empty AWS CodeCommit repo...\n')
     subprocess.run(
         'git clone ' + repo_ssh + ' ' + site_path + '/src',
         shell=True
     )
 
     print('\nChecking local repo\'s remotes...\n')
-    subprocess.run('git -C ' + site_path + '/src remote -v',shell=True)
+    subprocess.run('git -C ' + site_path + '/src remote -v', shell=True)
+
+    print('\nGenerating AWS CodeBuild buildspec for production...')
+    with open(site_path + '/deploy/build/buildspec_prod.yaml') as file:
+        sub = (file.read()
+            .replace('$hugo_ver', hugo_ver)
+            .replace('$s3_bucket', domain)
+            .replace('$cf_distro', domain)
+        )
+    os.makedirs(site_path + '/config', exist_ok=True)
+    with open(site_path + '/config/buildspec_prod.yaml', "w") as file:
+        file.write(sub)
 
     print('\nGenerating sample website index...')
     with open(site_path + '/deploy/build/index.html') as file:

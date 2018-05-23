@@ -2,17 +2,17 @@ version: 0.2
 
 env:
   variables:
-    HUGO_VERSION: "0.40.3" # 05/09/18: https://github.com/gohugoio/hugo/releases
-    S3_BUCKET: "devopsetc.com"
-    CF_DISTRO: "EQ8YW3K8OUKB3"
+    HUGO_VER: "$hugo_ver"
+    S3_BUCKET: "$s3_bucket"
+    CF_DISTRO: "$cf_distro"
   # parameter-store:
   #   test: "value"
 phases:
   install:
     commands:
       - echo Starting install phase...
-      # - wget https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_${HUGO_VERSION}_Linux-64bit.deb
-      # - dpkg -i ./hugo_${HUGO_VERSION}_Linux-64bit.deb
+      # - wget https://github.com/gohugoio/hugo/releases/download/v${HUGO_VER}/hugo_${HUGO_VER}_Linux-64bit.deb
+      # - dpkg -i ./hugo_${HUGO_VER}_Linux-64bit.deb
   pre_build:
     commands:
       - echo Entered the pre_build phase...
@@ -23,10 +23,8 @@ phases:
   post_build:
     commands:
       - echo Entered the post_build phase...
-      - aws s3 sync --delete public s3://devopsetc.com
-      # - aws s3 sync --delete public s3://${S3_BUCKET} # default object cache control is 24 hour; set with --cache-control max-age=3600
-      # - aws cloudfront create-invalidation --distribution-id ${CF_DISTRO} --paths "/*"
-      # - CF_DISTRO=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Aliases.Items, '${S3_BUCKET}')].Id" --output text)
+      - aws s3 sync --delete public s3://${S3_BUCKET} # default object cache control is 24 hour; set with --cache-control max-age=3600
+      - aws cloudfront create-invalidation --distribution-id ${CF_DISTRO} --paths "/*" # bulk invalidation
       - echo Build completed on `date`
 # artifacts:
 #   files:
