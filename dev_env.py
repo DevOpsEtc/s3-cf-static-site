@@ -13,6 +13,7 @@ def main(home, repo_ssh, site_path, domain):
 
     logs = site_path + '/logs'  # raw log path
     report = '_report.html'     # log report name
+    hugo_theme: 'https://github.com/budparr/gohugo-theme-ananke.git'
     hugo_ver = subprocess.check_output(
         'curl --silent \
             "https://api.github.com/repos/gohugoio/hugo/releases/latest" | \
@@ -47,16 +48,48 @@ def main(home, repo_ssh, site_path, domain):
     with open(site_path + '/src/config/buildspec_prod.yaml', "w") as file:
         file.write(sub)
 
-    print('\nGenerating sample website index...')
-    with open(site_path + '/deploy/build/index.html') as file:
-        sub = (file.read().replace('$domain', domain))
-    with open(site_path + '/src/index.html', "w") as file:
-        file.write(sub)
+    try:
+        subprocess.check_output(['type', '-p', 'hugo'])
+    except subprocess.CalledProcessError:
+        print(Fore.YELLOW + '\nHugo not found, please install and rerun')
+        print('\nhttps://gohugo.io/getting-started/installing/' + Fore.RESET)
+        exit()
 
-    print('\nStaging new file to local repo...')
+    print('\nGenerating new Hugo static site...')
+    # force lets us install in non-empty directory, e.g. .git
+    subprocess.run('hugo new site ' + site_path + '/src --force', shell=True)
+
+    print('\nDownloading a sample Hugo theme...')
+    subprocess.run('git -C ' + site_path + '/src submodule add'
+        + hugo_theme + 'themes/ananke',
+        shell=True
+    )
+
+    print("\nAdding the sample Hugo theme to your new Hugo site's config...")
+    subprocess.run(
+        'echo \'theme = "ananke"\' >> ' + site_path + '/src/config.toml',
+        shell=True
+    )
+
+    print('\nAdding a sample post to your new Hugo site...')
+    subprocess.run('hugo -s ' + site_path + '/src new post/test-post.md',
+        shell=True
+    )
+
+    print('\nStarting Hugo HTTP server with drafts enabled...')
+    subprocess.run('hugo server -d', shell=True)
+
+    print(Fore.YELLOW +
+        '\nRun Hugo server with drafts enabled:'
+        '\n$ hugo server -d  # Press Ctrl+C to stop'
+        '\nView new website at http://localhost:1313/'
+        + Fore.RESET
+    )
+
+    print('\nStaging new files to local repo...')
     subprocess.run('git -C ' + site_path + '/src add -A', shell=True)
 
-    print('\nCommitting staged file to local repo...\n')
+    print('\nCommitting staged files to local repo...\n')
     subprocess.run('git -C ' + site_path + '/src commit -m "test"', shell=True)
 
     print('\nPushing commit to remote AWS CodeCommit repo...\n')
