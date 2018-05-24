@@ -43,8 +43,8 @@ def main(home, repo_ssh, site_path, domain):
             .replace('$s3_bucket', domain)
             .replace('$cf_distro', cf_distro)
         )
-    os.makedirs(site_path + '/config', exist_ok=True)
-    with open(site_path + '/config/buildspec_prod.yaml', "w") as file:
+    os.makedirs(site_path + '/src/config', exist_ok=True)
+    with open(site_path + '/src/config/buildspec_prod.yaml', "w") as file:
         file.write(sub)
 
     print('\nGenerating sample website index...')

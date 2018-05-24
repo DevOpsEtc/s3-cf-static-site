@@ -5,33 +5,22 @@ env:
     HUGO_VER: "$hugo_ver"
     S3_BUCKET: "$s3_bucket"
     CF_DISTRO: "$cf_distro"
-  # parameter-store:
-  #   test: "value"
 phases:
   install:
     commands:
       - echo Starting install phase...
-      # - wget https://github.com/gohugoio/hugo/releases/download/v${HUGO_VER}/hugo_${HUGO_VER}_Linux-64bit.deb
-      # - dpkg -i ./hugo_${HUGO_VER}_Linux-64bit.deb
+      - wget https://github.com/gohugoio/hugo/releases/download/v${HUGO_VER}/hugo_${HUGO_VER}_Linux-64bit.deb
+      - dpkg -i ./hugo_${HUGO_VER}_Linux-64bit.deb
   pre_build:
     commands:
       - echo Entered the pre_build phase...
   build:
     commands:
       - echo Entered the build phase...
-      # - hugo
+      - hugo
   post_build:
     commands:
       - echo Entered the post_build phase...
       - aws s3 sync --delete public s3://${S3_BUCKET} # default object cache control is 24 hour; set with --cache-control max-age=3600
       - aws cloudfront create-invalidation --distribution-id ${CF_DISTRO} --paths "/*" # bulk invalidation
       - echo Build completed on `date`
-# artifacts:
-#   files:
-#     discard-paths: yes
-#     # - devopsetc.com.tgz
-# #   base-directory: location
-# cache:
-#   paths:
-#     - path
-#     - path
