@@ -41,7 +41,7 @@ def main(home, repo_ssh, site_path, domain):
         sub = (file.read()
             .replace('$hugo_ver', hugo_ver)
             .replace('$s3_bucket', domain)
-            .replace('$cf_distro', domain)
+            .replace('$cf_distro', cf_distro)
         )
     os.makedirs(site_path + '/config', exist_ok=True)
     with open(site_path + '/config/buildspec_prod.yaml', "w") as file:
