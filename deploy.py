@@ -13,14 +13,18 @@ def main():
     """Create/Update/Delete CloudFormation stack to deploy S3 static website.
 
     Launches a CloudFormation stack that creates:
-        - One ACM SSL/TLS certificate
-        - One IAM group
-        - One IAM group policy
-        - One IAM user
-        - Two S3 buckets
+        - Three S3 buckets
         - Two CloudFront distributions
+        - Three IAM inline policies
         - Two Route 53 DNS records
+        - Two IAM roles
+        - One IAM group
+        - One IAM user
+        - One ACM SSL/TLS certificate
+        - One RSA key pair
         - One CodeCommit repository
+        - One CodePipeline pipeline
+        - One CodeBuild project
 
     Resources will be created in region us-east-1, for ACM
     certificate/CloudFront compatibility.
