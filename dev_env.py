@@ -13,7 +13,9 @@ def main(home, repo_ssh, site_path, domain):
 
     logs = site_path + '/logs'  # raw log path
     report = '_report.html'     # log report name
-    hugo_theme = 'https://github.com/budparr/gohugo-theme-ananke.git'
+    hugo_theme_name = 'gohugo-theme-ananke'
+    hugo_theme_repo = 'laozhu/gohugo-theme-ananke.git' # https://themes.gohugo.io
+    hugo_theme_url = 'https://github.com/' + hugo_theme_repo
     hugo_ver = subprocess.check_output(
         'curl --silent \
             "https://api.github.com/repos/gohugoio/hugo/releases/latest" | \
@@ -37,7 +39,7 @@ def main(home, repo_ssh, site_path, domain):
     print('\nChecking local repo\'s remotes...\n')
     subprocess.run('git -C ' + site_path + '/src remote -v', shell=True)
 
-    print('\nGenerating AWS CodeBuild buildspec for production...')
+    print('\nGenerating AWS CodeBuild buildspec for CI/CD workflow...')
     with open(site_path + '/deploy/build/buildspec_prod.yaml') as file:
         sub = (file.read()
             .replace('$hugo_ver', hugo_ver)
@@ -59,32 +61,41 @@ def main(home, repo_ssh, site_path, domain):
     # force lets us install in non-empty directory, e.g. .git
     subprocess.run('hugo new site ' + site_path + '/src --force', shell=True)
 
-    print('\nDownloading a sample Hugo theme...')
-    subprocess.run('git -C ' + site_path + '/src submodule add'
-        + hugo_theme + 'themes/ananke',
+    print('\nAdding a sample Hugo theme as a git submodule...')
+    subprocess.run('git -C ' + site_path + '/src submodule add '
+        + hugo_theme_url + ' themes/' + hugo_theme_name,
         shell=True
     )
 
+    print('\nGenerating a gitignore for submodule and select theme files...')
+    with open(site_path + '/deploy/build/.gitignore') as file:
+        sub = (file.read()
+            .replace('$theme_name', hugo_theme_name)
+        )
+    with open(site_path + '/src/.gitignore', "w") as file:
+        file.write(sub)
+
     print("\nAdding the sample Hugo theme to your new Hugo site's config...")
     subprocess.run(
-        'echo \'theme = "ananke"\' >> ' + site_path + '/src/config.toml',
+        'echo \'theme = "' + hugo_theme_name + '"\' >> ' + site_path + '/src/config.toml',
         shell=True
     )
 
     print('\nAdding a sample post to your new Hugo site...')
-    subprocess.run('hugo -s ' + site_path + '/src new post/test-post.md',
+    subprocess.run(
+        'echo \' This \' >> ' + site_path + '/src/config.toml',
         shell=True
     )
 
-    print('\nStarting Hugo HTTP server with drafts enabled...')
-    subprocess.run('hugo server -d', shell=True)
-
-    print(Fore.YELLOW +
-        '\nRun Hugo server with drafts enabled:'
-        '\n$ hugo server -d  # Press Ctrl+C to stop'
-        '\nView new website at http://localhost:1313/'
-        + Fore.RESET
-    )
+    # print('\nStarting Hugo HTTP server with drafts enabled...')
+    # subprocess.run('hugo server -D', shell=True)
+    #
+    # print(Fore.YELLOW +
+    #     '\nRun Hugo server with drafts enabled:'
+    #     '\n$ hugo server -D  # Press Ctrl+C to stop'
+    #     '\nView new website at http://localhost:1313/'
+    #     + Fore.RESET
+    # )
 
     print('\nStaging new files to local repo...')
     subprocess.run('git -C ' + site_path + '/src add -A', shell=True)
