@@ -103,9 +103,9 @@ def main():
     print(Fore.WHITE + '\nRSA Key Generation:' + Fore.RESET)
     key_gen.main(site, home, repo_base)
 
-    # if not os.path.isfile(site_path + '/bin/log_analyzer.sh'):
-    #     print(Fore.WHITE + '\nDev Environment Prep:' + Fore.RESET)
-    #     dev_env.main(home, repo_ssh, site_path, domain)
+    if not os.path.isfile(site_path + '/bin/log_analyzer.sh'):
+        print(Fore.WHITE + '\nDev Environment Prep:' + Fore.RESET)
+        dev_env.main(home, repo_ssh, site_path, domain)
 
     print(Fore.YELLOW + '\nGoodbye!')
 

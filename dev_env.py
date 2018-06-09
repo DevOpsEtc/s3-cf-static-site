@@ -13,7 +13,7 @@ def main(home, repo_ssh, site_path, domain):
 
     logs = site_path + '/logs'  # raw log path
     report = '_report.html'     # log report name
-    hugo_theme: 'https://github.com/budparr/gohugo-theme-ananke.git'
+    hugo_theme = 'https://github.com/budparr/gohugo-theme-ananke.git'
     hugo_ver = subprocess.check_output(
         'curl --silent \
             "https://api.github.com/repos/gohugoio/hugo/releases/latest" | \
