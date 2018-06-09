@@ -13,8 +13,8 @@ def main(home, repo_ssh, site_path, domain):
 
     logs = site_path + '/logs'  # raw log path
     report = '_report.html'     # log report name
-    hugo_theme_name = 'gohugo-theme-ananke'
-    hugo_theme_repo = 'laozhu/gohugo-theme-ananke.git' # https://themes.gohugo.io
+    hugo_theme_name = 'hugo-nuo'
+    hugo_theme_repo = 'laozhu/hugo-nuo' # https://themes.gohugo.io
     hugo_theme_url = 'https://github.com/' + hugo_theme_repo
     hugo_ver = subprocess.check_output(
         'curl --silent \
@@ -67,6 +67,17 @@ def main(home, repo_ssh, site_path, domain):
         shell=True
     )
 
+    print("\nAdding a Hugo theme to your new Hugo site's config...")
+    subprocess.run(
+        'echo \'theme = "' + hugo_theme_name + '"\' >> ' + site_path + '/src/config.toml',
+        shell=True
+    )
+
+    print('\nCopying the example site from the Hugo theme...')
+    subprocess.run('yes | cp -rf ' + site_path + '/src/themes/' + hugo_theme_name + '/exampleSite/* ' + site_path + '/src',
+        shell=True
+    )
+
     print('\nGenerating a gitignore for submodule and select theme files...')
     with open(site_path + '/deploy/build/.gitignore') as file:
         sub = (file.read()
@@ -74,28 +85,6 @@ def main(home, repo_ssh, site_path, domain):
         )
     with open(site_path + '/src/.gitignore', "w") as file:
         file.write(sub)
-
-    print("\nAdding the sample Hugo theme to your new Hugo site's config...")
-    subprocess.run(
-        'echo \'theme = "' + hugo_theme_name + '"\' >> ' + site_path + '/src/config.toml',
-        shell=True
-    )
-
-    print('\nAdding a sample post to your new Hugo site...')
-    subprocess.run(
-        'echo \' This \' >> ' + site_path + '/src/config.toml',
-        shell=True
-    )
-
-    # print('\nStarting Hugo HTTP server with drafts enabled...')
-    # subprocess.run('hugo server -D', shell=True)
-    #
-    # print(Fore.YELLOW +
-    #     '\nRun Hugo server with drafts enabled:'
-    #     '\n$ hugo server -D  # Press Ctrl+C to stop'
-    #     '\nView new website at http://localhost:1313/'
-    #     + Fore.RESET
-    # )
 
     print('\nStaging new files to local repo...')
     subprocess.run('git -C ' + site_path + '/src add -A', shell=True)
