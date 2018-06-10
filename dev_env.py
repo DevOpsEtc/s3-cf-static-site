@@ -115,7 +115,7 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
     subprocess.run('hugo new site ' + site_path + '/src --force', shell=True)
 
     print('\nCloning a sample Hugo theme...')
-    subprocess.run('git -C ' + site_path + '/src clone '
+    subprocess.run('git -C ' + site_path + '/src clone -depth 1 '
         + hugo_theme_url + ' themes/' + hugo_theme_name,
         shell=True
     )
