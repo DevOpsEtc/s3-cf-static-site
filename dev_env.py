@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
+from botocore.exceptions import ClientError
 from colorama import init, Fore
 import os
 import subprocess
 import sys
 
-def main(home, repo_ssh, site_path, domain):
+def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
 
     """Bootstraps a development environment with package installation, sample
     static website, repo cloning and ad-hoc management commands.
@@ -30,6 +31,55 @@ def main(home, repo_ssh, site_path, domain):
           universal_newlines=True
     ).strip()
 
+    prereqs = {
+        'hugo': 'https://gohugo.io/getting-started/installing',
+        'yarn': 'https://yarnpkg.com/lang/en/docs/install'
+    }
+
+    for prereq, url in prereqs.items():
+        try:
+            subprocess.check_output(['type', '-p', prereq])
+        except subprocess.CalledProcessError:
+            print(Fore.RED + '\n' + prereq + ' is missing— install then '
+                'rerun:')
+            print(Fore.YELLOW + '\n' + url + Fore.RESET)
+            exit()
+
+    try:
+        cf.describe_stacks(StackName=stack_cicd)
+    except ClientError as e:
+        if e.response['Error']['Message'].endswith('does not exist'):
+            print(Fore.YELLOW + '\nMissing Stack: ' + stack_cicd)
+            print(Fore.YELLOW + '\nRerun deploy script!')
+            exit()
+
+    if os.path.isdir(site_path + '/bin'):
+        print(Fore.YELLOW + '\nExisting dev env found!\n')
+        prompt = Fore.GREEN + 'Skip or Remove/Rebuild (S/R)? ' + Fore.RESET
+        while True:
+            reply = str(input(prompt)).lower()
+            if reply[:1] == 'r':
+                if input(Fore.RED + "\nAfter removing you'll need to delete "
+                    "the Static-Site-CICD stack BEFORE you can rebuild the "
+                    "dev env!\n"
+                    '\nStill want to remove (y/n)? ' + Fore.RESET) == "y":
+                    subprocess.run(
+                        'rm -rf ' + site_path + '/{bin,src}',
+                        shell=True
+                    )
+                    print(Fore.YELLOW + '\nYour dev env was removed! Goodbye.')
+                    exit()
+                else:
+                    print(Fore.YELLOW + '\nKeeping your existing dev env!')
+                    print(Fore.YELLOW + '\nGoodbye!')
+                    exit()
+                break
+            elif reply[:1] == 's':
+                print(Fore.YELLOW + '\nGoodbye!')
+                exit()
+            else:
+                print(Fore.RED + '\nInvalid... only S or R!\n')
+
     print('\nCloning the new, empty AWS CodeCommit repo...\n')
     subprocess.run(
         'git clone ' + repo_ssh + ' ' + site_path + '/src',
@@ -50,13 +100,6 @@ def main(home, repo_ssh, site_path, domain):
     with open(site_path + '/src/config/buildspec_prod.yaml', "w") as file:
         file.write(sub)
 
-    try:
-        subprocess.check_output(['type', '-p', 'hugo'])
-    except subprocess.CalledProcessError:
-        print(Fore.YELLOW + '\nHugo not found, please install and rerun')
-        print('\nhttps://gohugo.io/getting-started/installing/' + Fore.RESET)
-        exit()
-
     print('\nGenerating new Hugo static site...')
     # force lets us install in non-empty directory, e.g. .git
     subprocess.run('hugo new site ' + site_path + '/src --force', shell=True)
@@ -69,16 +112,25 @@ def main(home, repo_ssh, site_path, domain):
 
     print("\nAdding a Hugo theme to your new Hugo site's config...")
     subprocess.run(
-        'echo \'theme = "' + hugo_theme_name + '"\' >> ' + site_path + '/src/config.toml',
+        'echo \'theme = "' + hugo_theme_name + '"\' >> ' + site_path + \
+            '/src/config.toml',
         shell=True
     )
 
     print('\nCopying the example site from the Hugo theme...')
-    subprocess.run('yes | cp -rf ' + site_path + '/src/themes/' + hugo_theme_name + '/exampleSite/* ' + site_path + '/src',
+    subprocess.run('yes | cp -rf ' + site_path + '/src/themes/' + \
+        hugo_theme_name + '/exampleSite/* ' + site_path + '/src',
         shell=True
     )
 
-    print('\nGenerating a gitignore for submodule and select theme files...')
+    print('\nInstalling dependences for yarn build...')
+    subprocess.run(
+        'cd ' + site_path + '/src/themes/' + hugo_theme_name + ' && yarn',
+        shell=True
+    )
+
+    print('\nGenerating a gitignore for submodule, select theme files and '
+        'yarn dependences...')
     with open(site_path + '/deploy/build/.gitignore') as file:
         sub = (file.read()
             .replace('$theme_name', hugo_theme_name)
@@ -110,7 +162,7 @@ def main(home, repo_ssh, site_path, domain):
     with open(site_path + '/bin/log_analyzer.sh', "w") as file:
         file.write(sub)
 
-    print('\nSetting file mode on site log analyzer script to 755...')
+    print('\nSetting file mode on site log analyzer script to 755...\n')
     os.chmod(site_path + '/bin/log_analyzer.sh', 0o755)
 
     if sys.platform.startswith('darwin'):
@@ -118,20 +170,38 @@ def main(home, repo_ssh, site_path, domain):
     elif sys.platform.startswith('linux'):
         dotfile = home + '.bashrc'
 
-    if not 'alias slr' in open(dotfile).read():
+    if not 'alias devkill' in open(dotfile).read():
         aliases = {
             'generate log analyzer locally: $ slr':
                 'alias slr=\'' + site_path + '/bin/log_analyzer.sh\'\n',
             'delete log analyzer from S3 bucket: $ slrd':
-                'alias slrd=\'aws s3 rm s3://' + domain + '/' + report + '\'\n'
+                'alias slrd=\'aws s3 rm s3://' + domain + '/' + report +
+                '\'\n',
+            'start yarn/webpack/hugo dev watch: $ dev':
+                'alias dev=\'cd ' + site_path + '/src; (hugo server &); \
+                cd themes/' + hugo_theme_name + '; (yarn dev &); cd -; open \
+                http://localhost:1313\'\n',
+            'stop yarn/webpack/hugo dev watch: $ devkill':
+                'alias devkill=\'(killall hugo node)\''
         }
 
         for k, v in aliases.items():
-            print('\nCreating bash alias to ' + k + '...')
+            print(Fore.YELLOW + 'Creating bash alias to ' + k + '...')
             with open(dotfile, "a") as file:
                 file.write(v)
 
-        print('\nSource dotfile to pickup new aliases: $ source ' + dotfile)
+        print(Fore.YELLOW + '\nWorkflow: '
+            '\n1. $ dev # start dev build system; enter to get prompt back'
+            '\n2. Alter theme and/or create/update content'
+            '\n3. Browser will automatically refresh with updates'
+            '\n4. $ git add -A # stage changes'
+            '\n5. $ git commit -m \'your commit message\' # commit changes'
+            '\n6. $ git push origin master # or other branch\n'
+        )
+
+        print(Fore.YELLOW + '\nSource dotfile to load new aliases: '
+            '$ source ' + dotfile
+        )
 
 if __name__ == '__main__':
     main()

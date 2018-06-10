@@ -5,7 +5,6 @@ from botocore.exceptions import ClientError
 from colorama import init, Fore
 from halo import Halo
 import os
-import subprocess
 import key_gen
 import dev_env
 
@@ -103,9 +102,8 @@ def main():
     print(Fore.WHITE + '\nRSA Key Generation:' + Fore.RESET)
     key_gen.main(site, home, repo_base)
 
-    if not os.path.isfile(site_path + '/bin/log_analyzer.sh'):
-        print(Fore.WHITE + '\nDev Environment Prep:' + Fore.RESET)
-        dev_env.main(home, repo_ssh, site_path, domain)
+    print(Fore.WHITE + '\nDev Env Prep:' + Fore.RESET)
+    dev_env.main(cf, domain, home, repo_ssh, site_path, stack_cicd)
 
     print(Fore.YELLOW + '\nGoodbye!')
 
