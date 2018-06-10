@@ -1,0 +1,177 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CI/CD bootstrap for S3-based static site
+
+Parameters:
+  DomainName:
+    Description: Zone apex domain that points to S3 buckect storing static site
+    Type: String
+  RepoURL:
+    Description: CodeCommit repo url; needed for CodeBuild project
+    Type: String
+  SiteName:
+    Description: Name of S3 static site project
+    Type: String
+
+Resources:
+  SiteRepo:
+    Description: Code repository used as source by CodePipeline during run
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: !Ref DomainName
+
+  SitePipelineRole:
+    Description: IAM role assumed by CodePipeline during run
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+
+  SitePipelineRolePolicy:
+    Description: Policy for CodePipeline run
+    DependsOn: SitePipelineRole
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub '${SiteName}-Pipeline-Policy'
+      Roles:
+        - Ref: SitePipelineRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - codepipeline:*
+            Effect: Allow
+            Resource:
+              - !Sub 'arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:*'
+          - Action:
+              - codecommit:GetBranch
+              - codecommit:GetCommit
+              - codecommit:UploadArchive
+              - codecommit:GetUploadArchiveStatus
+              - codecommit:CancelUploadArchive
+            Effect: Allow
+            Resource:
+              - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:*'
+          - Action:
+              - codebuild:StartBuild
+              - codebuild:BatchGetBuilds
+              - codebuild:StopBuild
+            Effect: Allow
+            Resource: '*'
+          - Action:
+              - s3:*
+            Effect: Allow
+            Resource: '*' # !GetAtt SiteBucket.Arn
+
+  SiteBuildRole:
+    Description: IAM role assumed by CodeBuild during run
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+
+  SiteBuildRolePolicy:
+    Description: Policy for CodeBuild run
+    Type: AWS::IAM::Policy
+    DependsOn: SiteBuildRole
+    Properties:
+      PolicyName: !Sub '${SiteName}-Build-Policy'
+      Roles:
+        - !Ref SiteBuildRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action:
+              - s3:List*
+              - s3:GetBucketPolicy
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+            Effect: Allow
+            Resource: '*'
+          - Action:
+              - logs:*
+            Effect: Allow
+            Resource:
+              - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+          - Action:
+              - cloudfront:CreateInvalidation
+              - cloudfront:GetInvalidation
+              - cloudfront:ListInvalidations
+            Effect: Allow
+            Resource: '*'
+
+  SiteBuildProd:
+    Description: Generate static site and sync output to production S3 bucket
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/nodejs:8.11.0 # will be needed for npm installs
+        # EnvironmentVariables:
+        #   - Name:
+        #     Value:
+        Type: LINUX_CONTAINER
+      Name: !Sub '${SiteName}-Build-Prod'
+      ServiceRole: !Ref SiteBuildRole
+      Source:
+        BuildSpec: config/buildspec_prod.yaml
+        Location: !Ref RepoURL
+        Type: CODECOMMIT
+      TimeoutInMinutes: 5 # optional; between 5 and 480 minutes (8 hours)
+
+  SitePipelineProd:
+    Description: Static site production pipeline; watches repo & triggers build
+    DependsOn:
+      - SitePipelineRolePolicy
+      - SiteBuildProd
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RestartExecutionOnUpdate: True
+      RoleArn: !GetAtt SitePipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !ImportValue ArtifactStore
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: 1
+                Provider: CodeCommit
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                BranchName: 'master'
+                RepositoryName: !GetAtt [SiteRepo, Name]
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              Configuration:
+                ProjectName: !Ref SiteBuildProd
+              InputArtifacts:
+                - Name: SourceOutput
+              # OutputArtifacts:
+              #   - Name: BuildOutput
+              RunOrder: 1
