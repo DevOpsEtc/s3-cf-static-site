@@ -8,10 +8,11 @@
 /themes/$theme_name/.editorconfig
 /themes/$theme_name/.gitignore
 /themes/$theme_name/LICENSE.md
+/themes/$theme_name/data/manifest.json
 /themes/$theme_name/README.md
 /themes/$theme_name/theme.toml
 /themes/$theme_name/exampleSite
-#/themes/$theme_name/images
+/themes/$theme_name/images
 #/themes/$theme_name/layouts
 /themes/$theme_name/node_modules
 #/themes/hugo-nuo/src/assets
