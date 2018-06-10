@@ -154,7 +154,9 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
     subprocess.run('git -C ' + site_path + '/src add -A', shell=True)
 
     print('\nCommitting staged files to local repo...\n')
-    subprocess.run('git -C ' + site_path + '/src commit -m "test"', shell=True)
+    subprocess.run('git -C ' + site_path + '/src commit -m "initial commit"',
+        shell=True
+    )
 
     print('\nPushing commit to remote AWS CodeCommit repo...\n')
     subprocess.run(
@@ -194,7 +196,12 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
                 'cd themes/' + hugo_theme_name + '; (yarn dev &); cd -; open '
                 'http://localhost:1313\'\n',
             'stop yarn/webpack/hugo dev watch: $ devkill':
-                'alias devkill=\'(killall hugo node)\''
+                'alias devkill=\'(killall hugo node)\'\n',
+            'cd to site deploy and run deploy script: $ sitedep':
+                'alias sitedep=\'cd ' + site_path + '/deploy && ./deploy.py '
+                '&& cd - > /dev/null\'\n',
+            'cd to dev site source: $ devgo':
+                'alias devgo=\'cd ' + site_path + '/src && ls -l\''
         }
 
         for k, v in aliases.items():
