@@ -89,8 +89,18 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
     print('\nVerifying local repo\'s new remote...\n')
     subprocess.run('git -C ' + site_path + '/src remote -v', shell=True)
 
+    print('\nGenerating a gitignore for build, select theme files and '
+        'yarn dependences...')
+
+    with open('./build/.gitignore') as file:
+        sub = (file.read()
+            .replace('$theme_name', hugo_theme_name)
+        )
+    with open(site_path + '/src/.gitignore', "w") as file:
+        file.write(sub)
+
     print('\nGenerating AWS CodeBuild buildspec for CI/CD workflow...')
-    with open(site_path + '/deploy/build/buildspec_prod.yaml') as file:
+    with open('./build/buildspec_prod.yaml') as file:
         sub = (file.read()
             .replace('$hugo_ver', hugo_ver)
             .replace('$s3_bucket', domain)
@@ -104,9 +114,15 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
     # force lets us install in non-empty directory, e.g. .git
     subprocess.run('hugo new site ' + site_path + '/src --force', shell=True)
 
-    print('\nAdding a sample Hugo theme as a git submodule...')
-    subprocess.run('git -C ' + site_path + '/src submodule add '
+    print('\nCloning a sample Hugo theme...')
+    subprocess.run('git -C ' + site_path + '/src clone '
         + hugo_theme_url + ' themes/' + hugo_theme_name,
+        shell=True
+    )
+
+    print('\nCleaning up git clone repo...')
+    subprocess.run(
+        'rm -rf ' + site_path + '/src/themes/' + hugo_theme_name + '/.git',
         shell=True
     )
 
@@ -123,20 +139,16 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
         shell=True
     )
 
+    print('\nUpdating baseURL in theme config...')
+    subprocess.run('sed -i \'\' "/baseURL/d" ' + site_path + '/src/config.toml \
+        && echo baseURL = \\"https://' + domain + '\\" >> '+ site_path + '/src/config.toml',
+    shell=True)
+
     print('\nInstalling dependences for yarn build...')
     subprocess.run(
         'cd ' + site_path + '/src/themes/' + hugo_theme_name + ' && yarn',
         shell=True
     )
-
-    print('\nGenerating a gitignore for submodule, select theme files and '
-        'yarn dependences...')
-    with open(site_path + '/deploy/build/.gitignore') as file:
-        sub = (file.read()
-            .replace('$theme_name', hugo_theme_name)
-        )
-    with open(site_path + '/src/.gitignore', "w") as file:
-        file.write(sub)
 
     print('\nStaging new files to local repo...')
     subprocess.run('git -C ' + site_path + '/src add -A', shell=True)
@@ -151,7 +163,7 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
     )
 
     print('\nGenerating site log analyzer script...')
-    with open(site_path + '/deploy/build/log_analyzer.sh') as file:
+    with open('./build/log_analyzer.sh') as file:
         sub = (file.read()
             .replace('$domain', domain)
             .replace('$site_path', site_path)
@@ -191,7 +203,7 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
                 file.write(v)
 
         print(Fore.YELLOW + '\nSource dotfile to load new aliases: '
-        '$ source ' + dotfile + Fore.RESET
+        '$ source ' + dotfile
         )
 
         print(Fore.YELLOW + '\nWorkflow: '
@@ -200,7 +212,8 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
             '\n3. Browser will automatically refresh with updates'
             '\n4. $ git add -A # stage changes'
             '\n5. $ git commit -m \'your commit message\' # commit changes'
-            '\n6. $ git push origin master # or other branch\n'
+            '\n6. $ git push origin master # or other branch'
+            '\n7. $ devkill # stop dev build system processes' + Fore.RESET
         )
 
 if __name__ == '__main__':

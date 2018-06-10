@@ -5,18 +5,16 @@
 /public
 
 # Hugo themes (cloned & submodule)
-.gitmodules
 /themes/$theme_name/.editorconfig
-/themes/$theme_name/.git
 /themes/$theme_name/.gitignore
 /themes/$theme_name/LICENSE.md
 /themes/$theme_name/README.md
 /themes/$theme_name/theme.toml
 /themes/$theme_name/exampleSite
-/themes/$theme_name/images
-/themes/$theme_name/layouts
+#/themes/$theme_name/images
+#/themes/$theme_name/layouts
 /themes/$theme_name/node_modules
-/themes/$theme_name/src/assets
+#/themes/hugo-nuo/src/assets
 /themes/$theme_name/static
 
 # stupid macOS custom file attribute

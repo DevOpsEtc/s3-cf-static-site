@@ -9,15 +9,21 @@ phases:
   install:
     commands:
       - echo Starting install phase...
+      - apt-get update && apt-get install apt-transport-https # needed for yarn install error
+      - curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+      - echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
+      - apt-get update && apt-get install yarn
       - wget https://github.com/gohugoio/hugo/releases/download/v${HUGO_VER}/hugo_${HUGO_VER}_Linux-64bit.deb
       - dpkg -i ./hugo_${HUGO_VER}_Linux-64bit.deb
   pre_build:
     commands:
       - echo Entered the pre_build phase...
+      - cd themes/hugo-nuo && yarn # Install dependences, e.g. webpack & babel
   build:
     commands:
       - echo Entered the build phase...
-      - hugo
+      - yarn build # concat and minify js & css
+      - cd ../../ && hugo # build static site
   post_build:
     commands:
       - echo Entered the post_build phase...
