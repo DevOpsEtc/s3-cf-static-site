@@ -178,9 +178,9 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
                 'alias slrd=\'aws s3 rm s3://' + domain + '/' + report +
                 '\'\n',
             'start yarn/webpack/hugo dev watch: $ dev':
-                'alias dev=\'cd ' + site_path + '/src; (hugo server &); \
-                cd themes/' + hugo_theme_name + '; (yarn dev &); cd -; open \
-                http://localhost:1313\'\n',
+                'alias dev=\'cd ' + site_path + '/src; (hugo server &); '
+                'cd themes/' + hugo_theme_name + '; (yarn dev &); cd -; open '
+                'http://localhost:1313\'\n',
             'stop yarn/webpack/hugo dev watch: $ devkill':
                 'alias devkill=\'(killall hugo node)\''
         }
@@ -190,6 +190,10 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
             with open(dotfile, "a") as file:
                 file.write(v)
 
+        print(Fore.YELLOW + '\nSource dotfile to load new aliases: '
+        '$ source ' + dotfile + Fore.RESET
+        )
+
         print(Fore.YELLOW + '\nWorkflow: '
             '\n1. $ dev # start dev build system; enter to get prompt back'
             '\n2. Alter theme and/or create/update content'
@@ -197,10 +201,6 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
             '\n4. $ git add -A # stage changes'
             '\n5. $ git commit -m \'your commit message\' # commit changes'
             '\n6. $ git push origin master # or other branch\n'
-        )
-
-        print(Fore.YELLOW + '\nSource dotfile to load new aliases: '
-            '$ source ' + dotfile
         )
 
 if __name__ == '__main__':
