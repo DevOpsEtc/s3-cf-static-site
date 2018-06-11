@@ -191,10 +191,13 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
             'delete log analyzer from S3 bucket: $ slrd':
                 'alias slrd=\'aws s3 rm s3://' + domain + '/' + report +
                 '\'\n',
-            'start yarn/webpack/hugo dev watch: $ dev':
+            'start system build in dev watch mode: $ dev':
                 'alias dev=\'cd ' + site_path + '/src; (hugo server &); '
                 'cd themes/' + hugo_theme_name + '; (yarn dev &); cd -; open '
                 'http://localhost:1313\'\n',
+            'rebuild source files: $ devbuild':
+                'alias devbuild=\'cd ' + site_path + '/src/themes/hugo-nuo; '
+                'yarn build\'\n',
             'stop yarn/webpack/hugo dev watch: $ devkill':
                 'alias devkill=\'(killall hugo node)\'\n',
             'cd to site deploy and run deploy script: $ sitedep':
@@ -202,7 +205,7 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
                 '&& cd - > /dev/null\'\n',
             'cd to dev site source: $ devcd':
                 'alias devcd=\'cd ' + site_path + '/src && ls -l\'\n',
-            'cd to dev site source: $ devgo':
+            'open site on localhost: $ devgo':
                 'alias devgo=\'open http://localhost:1313\''
         }
 
