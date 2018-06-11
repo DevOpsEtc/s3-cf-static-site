@@ -200,8 +200,10 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
             'cd to site deploy and run deploy script: $ sitedep':
                 'alias sitedep=\'cd ' + site_path + '/deploy && ./deploy.py '
                 '&& cd - > /dev/null\'\n',
+            'cd to dev site source: $ devcd':
+                'alias devgo=\'cd ' + site_path + '/src && ls -l\'\n',
             'cd to dev site source: $ devgo':
-                'alias devgo=\'cd ' + site_path + '/src && ls -l\''
+                'alias devgo=\'open http://localhost:1313\''
         }
 
         for k, v in aliases.items():
