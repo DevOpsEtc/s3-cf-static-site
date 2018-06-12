@@ -184,7 +184,7 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
     elif sys.platform.startswith('linux'):
         dotfile = home + '.bashrc'
 
-    if not 'alias devkill' in open(dotfile).read():
+    if not 'alias devgo' in open(dotfile).read():
         aliases = {
             'generate log analyzer locally: $ slr':
                 'alias slr=\'' + site_path + '/bin/log_analyzer.sh\'\n',
@@ -195,17 +195,20 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
                 'alias dev=\'cd ' + site_path + '/src; (hugo server &); '
                 'cd themes/' + hugo_theme_name + '; (yarn dev &); cd -; open '
                 'http://localhost:1313\'\n',
-            'rebuild source files: $ devbuild':
-                'alias devbuild=\'cd ' + site_path + '/src/themes/hugo-nuo; '
-                'yarn build\'\n',
-            'stop yarn/webpack/hugo dev watch: $ devkill':
+            'build source files: $ devbuild':
+                'alias devbuild=\'cd ' + site_path + '/src/themes/'
+                + hugo_theme_name + '; yarn build && cd - > /dev/null\'\n',
+            'remove files built from source: $ devclean':
+                'alias devclean=\'cd ' + site_path + '/src/themes/'
+                + hugo_theme_name + '; yarn clean && cd - > /dev/null\'\n',
+            'stop system build dev watch mode: $ devkill':
                 'alias devkill=\'(killall hugo node)\'\n',
             'cd to site deploy and run deploy script: $ sitedep':
                 'alias sitedep=\'cd ' + site_path + '/deploy && ./deploy.py '
                 '&& cd - > /dev/null\'\n',
-            'cd to dev site source: $ devcd':
+            'cd to site source: $ devcd':
                 'alias devcd=\'cd ' + site_path + '/src && ls -l\'\n',
-            'open site on localhost: $ devgo':
+            'open site on localhost:1313: $ devgo':
                 'alias devgo=\'open http://localhost:1313\''
         }
 
