@@ -102,6 +102,7 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
     print('\nGenerating AWS CodeBuild buildspec for CI/CD workflow...')
     with open('./build/buildspec_prod.yaml') as file:
         sub = (file.read()
+            .replace('$hugo_theme', hugo_theme_url)
             .replace('$hugo_ver', hugo_ver)
             .replace('$s3_bucket', domain)
             .replace('$cf_distro', cf_distro)

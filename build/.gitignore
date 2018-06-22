@@ -1,22 +1,18 @@
 # project notes
 /_private
 
-# Hugo generated build
+# Hugo themes
+/themes
+
+# Build system
+/build/node_modules
+/build/yarn.lock
+/build/.eslintcache
+/build/npm-debug.log
+/build/yarn-error.log
 /public
+/static
 
-# Hugo themes (cloned & submodule)
-/themes/$theme_name/.editorconfig
-/themes/$theme_name/.gitignore
-/themes/$theme_name/LICENSE.md
-/themes/$theme_name/data/manifest.json
-/themes/$theme_name/README.md
-/themes/$theme_name/theme.toml
-/themes/$theme_name/exampleSite
-/themes/$theme_name/images
-#/themes/$theme_name/layouts
-/themes/$theme_name/node_modules
-#/themes/hugo-nuo/src/assets
-/themes/$theme_name/static
-
-# stupid macOS custom file attribute
+# Misc files
+.gitmodules
 .DS_Store
