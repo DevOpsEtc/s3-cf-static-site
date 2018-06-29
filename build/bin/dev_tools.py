@@ -26,8 +26,8 @@ def main():
     site_dpl = site_root + '/deploy'    # path to site deploy
     site_src = site_root + '/src'       # path to site source
     site_bld = site_src + '/build'      # path to site build
-    site_log = site_root + '/logs'       # path to site logs
-    report = '_report.html'        # name of log report
+    site_log = site_root + '/logs'      # path to site logs
+    report = '_report.html'             # name of log report
 
     fullCmdArgs = sys.argv              # read commandline arguments (first)
     argList = fullCmdArgs[1:]           # further arguments
@@ -80,7 +80,7 @@ def main():
         elif currentArgument in ("-o", "--open"):
             site_open()
         elif currentArgument in ("-p", "--new-post"):
-            site_post()
+            site_post(site_src)
         elif currentArgument in ("-r", "--report"):
             site_report(site_root, site_log, report)
         elif currentArgument in ("-h", "--help"):
