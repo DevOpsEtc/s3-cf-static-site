@@ -128,7 +128,7 @@ Resources:
       Name: !Sub '${SiteName}-Build-Prod'
       ServiceRole: !Ref SiteBuildRole
       Source:
-        BuildSpec: config/buildspec_prod.yaml
+        BuildSpec: build/buildspec_prod.yaml
         Location: !Ref RepoURL
         Type: CODECOMMIT
       TimeoutInMinutes: 5 # optional; between 5 and 480 minutes (8 hours)

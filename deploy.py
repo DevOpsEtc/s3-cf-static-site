@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 
+# include standard modules
+import os
+
+# include 3rd party modules
 import boto3
 from botocore.exceptions import ClientError
 from colorama import init, Fore
 from halo import Halo
-import os
+
+# include custom modules
 import key_gen
 import dev_env
 
@@ -33,17 +38,17 @@ def main():
     via a delete.
     """
 
-    if not 'domain_name' in os.environ:
-        print(Fore.YELLOW + '\nYou forgot to enter your domain name first:')
-        print(Fore.YELLOW + '$ export domain_name=domain.com')
-        exit()
+    print(Fore.WHITE + '\n### Static Site Install ###' + Fore.RESET)
 
-    domain = os.environ['domain_name']
-    domain_root = domain.split('.')[0]
+    if os.environ.get('domain_name'):
+        domain = os.environ.get('domain_name')
+    else:
+        domain = input(Fore.GREEN + '\nEnter a registered domain name for new '
+            'static site: ' + Fore.RESET)
     home = os.path.expanduser('~/')
     site_path = home + domain
     region = 'us-east-1' # overide any local AWS config; needed for ACM cert
-    repo_base = 'git-codecommit.' + region + '.amazonaws.com'
+    repo_base = 'git-codecommit.us-east-1.amazonaws.com'
     repo_https = 'https://' + repo_base + '/v1/repos/' + domain
     repo_ssh = 'ssh://' + repo_base + '/v1/repos/' + domain
     site = 'Static-Site'
@@ -55,18 +60,16 @@ def main():
     s3 = boto3.resource('s3', region_name=region)
     cf = boto3.client('cloudformation', region_name=region)
 
-    print(Fore.WHITE + '\nStatic Site Deploy (' + domain + '):' + Fore.RESET)
-
     for stack in stacks:
         params = [{"ParameterKey": "DomainName","ParameterValue": domain}]
 
         if stack == stack_site:
-            deploy_tpl = './deploy/site.cfn.yaml'
+            deploy_tpl = './cfn/site.cfn.yaml'
             params = params + [
                 {"ParameterKey": "SiteName","ParameterValue": stack_site}
             ]
         if stack == stack_cicd:
-            deploy_tpl = './deploy/cicd.cfn.yaml'
+            deploy_tpl = './cfn/cicd.cfn.yaml'
             params = params + [
                 {"ParameterKey": "RepoURL","ParameterValue": repo_https},
                 {"ParameterKey": "SiteName","ParameterValue": stack_cicd}
@@ -102,13 +105,9 @@ def main():
                 else:
                     print(Fore.RED + '\nInvalid... only S, U or D!\n')
 
-    print(Fore.WHITE + '\nRSA Key Generation:' + Fore.RESET)
-    key_gen.main(site, home, repo_base)
+    key_gen.main()
 
-    print(Fore.WHITE + '\nDev Env Prep:' + Fore.RESET)
     dev_env.main(cf, domain, home, repo_ssh, site_path, stack_cicd)
-
-    print(Fore.YELLOW + '\nGoodbye!')
 
 def launch_stack(cf, deploy_tpl, domain, params, s3, stack_site, stack):
     if stack == stack_site:

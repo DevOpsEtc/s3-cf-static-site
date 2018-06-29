@@ -18,12 +18,12 @@ phases:
   pre_build:
     commands:
       - echo Entered the pre_build phase...
-      - cd themes/hugo-nuo && yarn # Install dependences, e.g. webpack & babel
+      - cd build && yarn # Install dependences, e.g. webpack & babel
   build:
     commands:
       - echo Entered the build phase...
       - yarn build # concat and minify js & css
-      - cd ../../ && hugo # build static site
+      - cd ../ && hugo # build static site
   post_build:
     commands:
       - echo Entered the post_build phase...

@@ -1,0 +1,19 @@
+@media print {
+  .disqus_thread,
+  .dsq-brlink,
+  .post-tags,
+  .site-header,
+  .suspension {
+    display: none !important;
+  }
+  .main {
+    display: initial;
+    float: none;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .site-footer {
+    margin-left: 0;
+    padding: 0;
+  }
+}

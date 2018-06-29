@@ -1,8 +1,9 @@
 # project notes
 /_private
 
-# Hugo themes
+# Hugo
 /themes
+/public
 
 # Build system
 /build/node_modules
@@ -10,8 +11,8 @@
 /build/.eslintcache
 /build/npm-debug.log
 /build/yarn-error.log
-/public
 /static
+/data
 
 # Misc files
 .gitmodules

@@ -1,0 +1,35 @@
+.links-list {
+  font-size: 0;
+  text-align: center;
+
+  & .link-item {
+    margin: 1.5rem auto;
+    display: inline-block;
+    width: 25%;
+    box-sizing: border-box;
+
+    & + .link-item {
+      padding-left: 1rem;
+    }
+
+    & .link-title {
+      font-size: var(--size-6);
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      min-width: 100px;
+    }
+
+    & .link-description {
+      font-size: var(--size-7);
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      min-width: 100px;
+    }
+
+    @media screen and (max-width: 800px) {
+      width: 50%;
+    }
+  }
+}

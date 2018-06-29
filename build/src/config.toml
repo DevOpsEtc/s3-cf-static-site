@@ -1,0 +1,59 @@
+baseURL = "https://$domain"
+languageCode = "en"
+title = "Static Site"
+# theme = "hugo-nuo"
+enableRobotsTXT = true
+pygmentsCodeFences = true
+pygmentsUseClasses = true
+# pygmentsStyle = "native" # https://help.farbox.com/pygments.html
+canonifyurls = true
+enableEmoji = true
+
+# Disqus Username
+disqusShortname = ""
+
+# Google Analytics UA number
+googleAnalytics = "UA-12345678-2"
+
+# Copyright name for site & posts
+copyright = "Your Company, LLC"
+
+# Initial site menu, you can extend menu with content.
+[[menu.main]]
+  name = "Posts"
+  weight = 10
+  identifier = "post"
+  url = "/"
+
+[[menu.main]]
+  name = "Tags"
+  weight = 20
+  identifier = "tags"
+  url = "/tags/"
+
+[blackfriday]
+  hrefTargetBlank = true
+
+[params.error404]
+title = "Missing Page!"
+content = "Oops... something's amiss!"
+
+# Add your own params here
+[params]
+  copyrightstart = 2017
+  dateformat = "Jan 2, 2006"
+  dateformatshort = "01/02/06"
+  author = "Me"
+  logo_cog_sm = "/img/logo-cog-sm.png"
+  logo_cog_lg = "/img/logo-cog-lg.png"
+  seotitle = "Static Site"
+  subtitle = "@AWS Cloud"
+  description = ""
+  paginate = 6
+  disclaim1 = "*Content baked "
+  disclaim2 = " days ago. Freshness not guaranteed— review ALL commands before running!"
+
+  # Choose your social networks
+  email = "email[@]you_domain[.]com [remove braces]"
+  github = "your_github"
+  linkedin = "your_linkedin"

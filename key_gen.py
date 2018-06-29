@@ -1,59 +1,71 @@
 #!/usr/bin/env python3
 
-import boto3
-from colorama import init, Fore
+# include standard modules
 import getpass
 import os
-import sys
 import subprocess
+import sys
 import time
 
-def main(site, home, repo_base):
+# include 3rd party modules
+import boto3
+from colorama import init, Fore
+
+def main():
     """Generates RSA public key to be used for git access to AWS CodeCommit
     repository. Generates locally, adds SSH alias to config, then uploads to
     AWS IAM user.
     """
-
+    home = os.path.expanduser('~/')
+    site = 'Static-Site'
     site_key = home + '.ssh/' + site + '-Key'
+    repo_base = 'git-codecommit.us-east-1.amazonaws.com'
     iam = boto3.client('iam')
-
     response = iam.list_ssh_public_keys(UserName=site + '-Admin')
+
+    print(Fore.WHITE + '\nRSA Key Generation:' + Fore.RESET)
+
     # check if list inside dict has an element
     if len(response['SSHPublicKeys']) > 0:
-        print(Fore.YELLOW + '\nExisting public key found for IAM user',
-            Fore.YELLOW + site + '-Admin...')
-        if input(Fore.GREEN + "\nRotate key (y/n)? "+ Fore.RESET) == "y":
-            pub_key_id = response['SSHPublicKeys'][0]['SSHPublicKeyId']
-            print('\nRemoving existing public key for IAM user',
-                site + '-Admin...')
-            iam.delete_ssh_public_key(
-                UserName=site + '-Admin',
-                SSHPublicKeyId=pub_key_id
-            )
+        print(Fore.YELLOW + '\nExisting key found for AWS IAM user: ' + site +
+            '-Admin' + '\n')
+        prompt = Fore.GREEN + 'Skip or Rotate (S/R)? ' + Fore.RESET
+        while True:
+            reply = str(input(prompt)).lower()
+            if reply[:1] == 'r':
+                pub_key_id = response['SSHPublicKeys'][0]['SSHPublicKeyId']
+                print('\nRemoving existing public key for IAM user',
+                    site + '-Admin...')
+                iam.delete_ssh_public_key(
+                    UserName=site + '-Admin',
+                    SSHPublicKeyId=pub_key_id
+                )
 
-            print('\nRemoving existing private key from ssh-agent...')
-            subprocess.run(
-                '[[ $(ssh-add -l | grep \' '+ site_key + ' \') ]] \
-                    && ssh-add -d ' + site_key,
-                shell=True
-            )
-
-            if os.path.isfile(site_key):
-                print('\nRemoving existing private key:', site_key + '...')
-                os.remove(site_key)
-
-            if os.path.isfile(home + '.ssh/config.d/' + site):
-                print('\nRemoving existing SSH config for AWS CodeCommit '
-                    'host...')
-                os.remove(home + '.ssh/config.d/' + site)
-
-            if repo_base in open(home + '.ssh/known_hosts').read():
-                print('\nRemoving AWS CodeCommit host from ' + home +
-                    '.ssh/known_hosts...\n')
+                print('\nRemoving existing private key from ssh-agent...')
                 subprocess.run(
-                    'ssh-keygen -R ' + repo_base,
+                    '[[ $(ssh-add -l | grep \' '+ site_key + ' \') ]] \
+                        && ssh-add -d ' + site_key,
                     shell=True
                 )
+
+                if os.path.isfile(site_key):
+                    print('\nRemoving existing private key:', site_key + '...')
+                    os.remove(site_key)
+
+                if os.path.isfile(home + '.ssh/config.d/' + site):
+                    print('\nRemoving existing SSH config for AWS CodeCommit '
+                        'host...')
+                    os.remove(home + '.ssh/config.d/' + site)
+
+                if repo_base in open(home + '.ssh/known_hosts').read():
+                    print('\nRemoving AWS CodeCommit host from ' + home +
+                        '.ssh/known_hosts...\n')
+                    subprocess.run('ssh-keygen -R ' + repo_base, shell=True)
+                break
+            elif reply[:1] == 's':
+                break
+            else:
+                print(Fore.RED + '\nInvalid... only S or R!\n')
 
     response = iam.list_ssh_public_keys(UserName=site + '-Admin')
     if len(response['SSHPublicKeys']) == 0:
@@ -87,9 +99,6 @@ def main(site, home, repo_base):
         # Traverse dict inside dict to extract public key id
         pub_key_id = response['SSHPublicKey']['SSHPublicKeyId']
 
-        print('\nRemoving local public key...')
-        os.remove(site_key + '.pub')
-
         # Check for/make extra SSH config directory; octal mode permission syntax
         if not os.path.isdir(home + '.ssh/config.d/'):
             os.mkdir(home + '.ssh/config.d/', 0o700)
@@ -118,8 +127,9 @@ def main(site, home, repo_base):
         print('\nSetting file mode on new SSH config to 600...')
         os.chmod(site_key, 0o600)
 
-        print(Fore.YELLOW + '\nWaiting 5 seconds for any AWS latency...')
-        time.sleep( 5 )
+        print(Fore.YELLOW + '\nPadding 10 seconds for any '
+            'AWS latency...' + Fore.RESET)
+        time.sleep( 10 )
 
         print('\nAdding AWS CodeCommit host to known_hosts and testing SSH '
             'config...\n')
