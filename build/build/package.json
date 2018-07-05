@@ -19,7 +19,7 @@
     "stylelint": "stylelint 'src/**/*.css' && exit 0",
     "stylelint:fix": "stylelint 'src/**/*.css' --fix && exit 0",
     "imagemin": "open -a ImageOptim ./src/{images}",
-    "clean": "rimraf ../static ../data .eslintcache npm-debug.log yarn-error.log"
+    "clean": "rimraf ../static ../data ../public .eslintcache npm-debug.log yarn-error.log"
   },
   "engines": {
     "node": ">= 9.0.0",
