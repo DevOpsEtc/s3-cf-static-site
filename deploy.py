@@ -2,6 +2,9 @@
 
 # include standard modules
 import os
+import signal
+import sys
+
 
 # include 3rd party modules
 import boto3
@@ -188,6 +191,13 @@ def delete_stack(cf, domain, region, s3, stack_site, stack):
     waiter = cf.get_waiter('stack_delete_complete')
     waiter.wait(StackName=stack)
     spinner.succeed(text='Deleted: '+ stack)
+
+def sigint_handler(signum, frame):
+    # handles KeyboardInterrupt (ctrl + c ) a little prettier
+    print(Fore.WHITE + '\n\nGoodbye!' + Fore.RESET)
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, sigint_handler)
 
 if __name__ == '__main__':
     main()
