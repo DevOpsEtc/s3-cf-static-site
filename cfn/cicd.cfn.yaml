@@ -5,6 +5,9 @@ Parameters:
   DomainName:
     Description: Zone apex domain that points to S3 buckect storing static site
     Type: String
+  EmailAddress:
+    Description: Address for CodeBuild success/failure notifications
+    Type: String
   RepoURL:
     Description: CodeCommit repo url; needed for CodeBuild project
     Type: String
@@ -175,3 +178,54 @@ Resources:
               # OutputArtifacts:
               #   - Name: BuildOutput
               RunOrder: 1
+
+  SitePipelineSNSTopic:
+    Description: Send notification email of CodePipeline state (success/failure)
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Endpoint: !Ref EmailAddress
+          Protocol: email
+      TopicName: SitePipelineSNSTopic
+
+  SitePipelineSNSTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Id: SitePipelineSNSTopicPolicy
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - events.amazonaws.com
+          Action: sns:Publish
+          Resource: !Ref SitePipelineSNSTopic
+      Topics:
+      - !Ref SitePipelineSNSTopic
+
+  SitePipelineEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Event rule fired on CodePipeline state change (success/failure)
+      EventPattern:
+        source:
+          - aws.codepipeline
+        detail-type:
+          - CodePipeline Pipeline Execution State Change
+        detail:
+          state:
+            - FAILED
+            - SUCCEEDED
+          pipeline:
+            - !Ref SitePipelineProd
+      State: ENABLED
+      Targets:
+        - Arn: !Ref SitePipelineSNSTopic
+          Id: SitePipelineSNSTopic
+          InputTransformer:
+            InputPathsMap:
+              pipeline: $.detail.pipeline
+              state: $.detail.state
+              time: $.time
+            InputTemplate: '"At <time>, AWS CodePipeline: <pipeline> has <state>!"'

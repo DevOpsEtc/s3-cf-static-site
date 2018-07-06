@@ -13,7 +13,7 @@ from halo import Halo
 import key_gen
 import dev_env
 
-def main():
+def main(domain=None, email=None):
     """Create/Update/Delete CloudFormation stack to deploy S3 static website.
 
     Launches two CloudFormation stacks that create:
@@ -40,11 +40,12 @@ def main():
 
     print(Fore.WHITE + '\n### Static Site Install ###' + Fore.RESET)
 
-    if os.environ.get('domain_name'):
-        domain = os.environ.get('domain_name')
-    else:
-        domain = input(Fore.GREEN + '\nEnter a registered domain name for new '
-            'static site: ' + Fore.RESET)
+    if 'domain' not in locals():
+        domain = input(Fore.GREEN + '\nEnter domain name for static site: '
+            + Fore.RESET)
+    if 'email' not in locals():
+        email = input(Fore.GREEN + '\nEnter email address for notifications: '
+            + Fore.RESET)
     home = os.path.expanduser('~/')
     site_path = home + domain
     region = 'us-east-1' # overide any local AWS config; needed for ACM cert
@@ -72,6 +73,7 @@ def main():
             deploy_tpl = './cfn/cicd.cfn.yaml'
             params = params + [
                 {"ParameterKey": "RepoURL","ParameterValue": repo_https},
+                {"ParameterKey": "EmailAddress","ParameterValue": email},
                 {"ParameterKey": "SiteName","ParameterValue": stack_cicd}
             ]
 
@@ -107,7 +109,7 @@ def main():
 
     key_gen.main()
 
-    dev_env.main(cf, domain, home, repo_ssh, site_path, stack_cicd)
+    dev_env.main(cf, domain, email, home, repo_ssh, site_path, stack_cicd)
 
 def launch_stack(cf, deploy_tpl, domain, params, s3, stack_site, stack):
     if stack == stack_site:
@@ -162,7 +164,7 @@ def update_stack(cf, deploy_tpl, params, stack):
     except ClientError as e:
         error_string = 'No updates are to be performed.'
         if e.response['Error']['Message'].endswith(error_string):
-            print(Fore.BLUE + '\n' + stack + ' => ' + error_string)
+            print(Fore.RED + '\n' + stack + ' => ' + error_string)
         else:
             print(Fore.RED + e.response['Error']['Message'])
 

@@ -21,6 +21,9 @@ def main():
     that can install, uninstall, rotate key pair, generate a site log report
     and start/stop a watched development session.
     """
+
+    domain = '$domain'                  # domain name/S3 bucket name
+    email = '$email'                    # for CodePipeline notifications
     home = os.path.expanduser('~/')     # expand home directory
     site_root = home + '$domain'        # path to site root
     site_dpl = site_root + '/deploy'    # path to site deploy
@@ -85,7 +88,7 @@ def main():
         elif currentArgument in ("-h", "--help"):
             display_help()
         elif currentArgument in ("-i", "--install"):
-            deploy.main()
+            deploy.main(domain, email)
         elif currentArgument in ("-u", "--uninstall"):
             print ("Static-Site Uninstall Coming Soon")
         else:

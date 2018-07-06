@@ -10,7 +10,7 @@ import sys
 from botocore.exceptions import ClientError
 from colorama import init, Fore
 
-def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
+def main(cf, domain, email, home, repo_ssh, site_path, stack_cicd):
 
     """Bootstraps a development environment with package installation, sample
     static website, revision control and source code build system.
@@ -40,17 +40,6 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
     }
 
     print(Fore.WHITE + '\nDev Environment Prep:' + Fore.RESET)
-
-    print('\nChecking prereqs...\n')
-    for k, v in prereqs.items():
-        try:
-            subprocess.check_output(['type', '-p', k])
-            print(k + Fore.GREEN + ' \u2714' + Fore.RESET)
-        except subprocess.CalledProcessError:
-            print(Fore.RED + '\n' + k + ' is missing— install then '
-                'rerun:')
-            print(Fore.YELLOW + '\n' + v + Fore.RESET)
-            sys.exit(1)
 
     try:
         cf.describe_stacks(StackName=stack_cicd)
@@ -87,6 +76,17 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
             else:
                 print(Fore.RED + '\nInvalid... only S or R!\n')
 
+    print('\nChecking prereqs...\n')
+    for k, v in prereqs.items():
+        try:
+            subprocess.check_output(['type', '-p', k])
+            print(k + Fore.GREEN + ' \u2714' + Fore.RESET)
+        except subprocess.CalledProcessError:
+            print(Fore.RED + '\n' + k + ' is missing— install then '
+                'rerun:')
+            print(Fore.YELLOW + '\n' + v + Fore.RESET)
+            sys.exit(1)
+
     print('\nCopying build files to ' + site_path + '...\n')
 
     build_content = {
@@ -114,6 +114,7 @@ def main(cf, domain, home, repo_ssh, site_path, stack_cicd):
         sub = (file.read()
             .replace('$site_deploy', site_path + '/deploy')
             .replace('$domain', domain)
+            .replace('$email', email)
         )
     with open(site_path + '/bin/dev_tools.py', "w") as file:
         file.write(sub)
