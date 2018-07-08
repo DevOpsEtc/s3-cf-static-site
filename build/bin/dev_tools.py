@@ -191,7 +191,7 @@ def display_help():
             'generate report'
         '\n$ site -b or $ site --build      # Run Webpack & Hugo builds'
         '\n$ site -c or $ site --clean      # Remove Webpack & Hugo builds'
-        '\n$ site -o or $ site --open       # Open localhost site in browser'
+        '\n$ site -o or $ site --open       # Open localhost:1313 in browser'
         '\n$ site -k or $ site --keypair    # Rotate SSH key pair (AWS cloud &'
             ' locally)'
         '\n$ site -h or $ site --help       # Display site CLI commands'
@@ -199,6 +199,7 @@ def display_help():
             ' locally)'
         '\n$ site -u or $ site --uninstall  # Uninstall static site (AWS cloud'
             ' & locally)'
+        '\n$ sitego                         # cd to site source'
         + Fore.RESET
     )
 
